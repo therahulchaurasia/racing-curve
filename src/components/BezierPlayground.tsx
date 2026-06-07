@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Lane, START_OFFSET, CHECKER_WIDTH } from "./Lane"
 import { CurveGraph } from "./CurveGraph"
 import { PixelButton } from "./PixelButton"
@@ -15,12 +15,16 @@ import { StarField } from "./Stars"
 import { Mountains } from "./Mountains"
 import { NightSky } from "./NightSky"
 import { FoliageLayer } from "./FoliageLayer"
-import { BUSHES } from "./foliage"
+import { BUSHES } from "@/lib/foliage"
 import { cubicBezier } from "@/lib/cubicBezier"
 import { labelForCurve } from "@/lib/presets"
 import { LANE_PALETTE as PALETTE } from "@/lib/palette"
 import type { Lane as LaneType } from "@/lib/types"
-import { type Settings, writeSettingsCookie, writeIntroSeenCookie } from "@/lib/settings"
+import {
+  type Settings,
+  writeSettingsCookie,
+  writeIntroSeenCookie,
+} from "@/lib/settings"
 
 const DURATION_MS = 3000
 const MAX_LANES = 6 // capped so the side-view stays scenic (no endless stacking)
@@ -90,6 +94,15 @@ export function BezierPlayground({
   // start lights drive the countdown; green (onGo) launches the cars
   const lights = useStartLightSequence({ onGo: onPlay })
 
+  // latest values the effects/handlers need, read through a ref so they don't have to re-subscribe
+  // or re-run per render (the rAF loop must depend on `play` ONLY — adding `lights` would cancel +
+  // restart it every render). Updated after commit (not during render) so concurrent/StrictMode
+  // re-renders can't leave it stale.
+  const latest = useRef({ lanes, lightsStyle, settingsOpen, aboutOpen, lights })
+  useEffect(() => {
+    latest.current = { lanes, lightsStyle, settingsOpen, aboutOpen, lights }
+  })
+
   useEffect(() => {
     if (!play) return
     let frameId = 0
@@ -101,23 +114,17 @@ export function BezierPlayground({
         frameId = requestAnimationFrame(tick)
       } else {
         setPlay(null)
-        lights.reset() // race over → lights back to off
+        latest.current.lights.reset() // race over → lights off (via ref so deps stay [play])
       }
     }
     frameId = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frameId)
   }, [play])
 
-  const onReset = () => {
-    setPlay(null)
-    setProgress(lanes.map(() => 0))
-    setCurrentT(0)
-    lights.reset()
-  }
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.code !== "Space") return
+      const { lanes, lightsStyle, settingsOpen, aboutOpen, lights } = latest.current
       if (settingsOpen || aboutOpen) return // a modal is open — don't start a race behind it
       const target = e.target as HTMLElement | null
       if (
@@ -146,7 +153,7 @@ export function BezierPlayground({
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [lanes, lights.start, lights.startSimple, lightsStyle, settingsOpen, aboutOpen])
+  }, [])
 
   const updateLane = (next: LaneType) => {
     setLanes((prev) => prev.map((l) => (l.id === next.id ? next : l)))
@@ -237,7 +244,12 @@ export function BezierPlayground({
         >
           {/* gantry reflects the sequence: sequence lights reds→green over the countdown; simple
               lights all greens at once on launch. Hidden entirely when showLights is off. */}
-          {showLights && <StartGantry redColumns={lights.redColumns} greenOn={lights.greenOn} />}
+          {showLights && (
+            <StartGantry
+              redColumns={lights.redColumns}
+              greenOn={lights.greenOn}
+            />
+          )}
         </div>
         {lanes.map((lane, i) => (
           <Lane
@@ -284,15 +296,6 @@ export function BezierPlayground({
           >
             {lanes.length >= MAX_LANES ? "MAX LANES" : "+ LANE"}
           </PixelButton>
-          {/* TODO(cleanup): PLAY + RESET buttons replaced by "PRESS SPACE TO START" prompt.
-              Handlers (onPlay / onReset) kept in case we bring them back. Decide on final cleanup
-              once the rest of the game is done. */}
-          {/* <div className="flex gap-2 self-start">
-            <PixelButton onClick={onPlay} disabled={isPlaying}>
-              {isPlaying ? "PLAYING…" : "PLAY"}
-            </PixelButton>
-            <PixelButton onClick={onReset}>RESET</PixelButton>
-          </div> */}
         </div>
       </div>
 

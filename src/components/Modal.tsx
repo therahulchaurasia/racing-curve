@@ -8,10 +8,10 @@
 
 import * as Dialog from "@radix-ui/react-dialog"
 import type { ReactNode } from "react"
-import { STAIRCASE_CLIP, staircaseInnerClip } from "./clipPaths"
+import { STAIRCASE_CLIP, staircaseInnerClip } from "../lib/clipPaths"
 import { PANEL_BG } from "./Panel"
 import { RacingCurvesLogo } from "./RacingCurvesLogo"
-import { BOARD_BG } from "./graphTheme"
+import { BOARD_BG } from "../lib/graphTheme"
 import { PixelButton } from "./PixelButton"
 import { BUTTON_RED } from "@/lib/palette"
 
@@ -51,57 +51,72 @@ export function Modal({
             backgroundAttachment: "fixed",
           }}
         >
-        <Dialog.Content
-          aria-describedby={undefined}
-          className="flex flex-col items-center"
-          style={{ position: "relative", zIndex: 61 }}
-        >
-          {/* DOOM-style header: the wordmark sits ABOVE the panel (asphalt fill, white border + text
+          <Dialog.Content
+            aria-describedby={undefined}
+            className="flex flex-col items-center"
+            style={{ position: "relative", zIndex: 61 }}
+          >
+            {/* DOOM-style header: the wordmark sits ABOVE the panel (asphalt fill, white border + text
               so it reads on the dark overlay), with a clear gap to the panel below. Omitted when the
               title itself is the headline (e.g. the About modal's wordplay). */}
-          {logo && (
-            <div style={{ marginBottom: 16 }}>
-              <RacingCurvesLogo fill={BOARD_BG} border="#ffffff" text="#ffffff" fontSize={40} />
-            </div>
-          )}
-          {/* panel box — two clipped layers: a light FRAME layer (full staircase silhouette) with the
+            {logo && (
+              <div style={{ marginBottom: 16 }}>
+                <RacingCurvesLogo
+                  fill={BOARD_BG}
+                  border="#ffffff"
+                  text="#ffffff"
+                  fontSize={40}
+                />
+              </div>
+            )}
+            {/* panel box — two clipped layers: a light FRAME layer (full staircase silhouette) with the
               dark panel on top clipped to the SAME silhouette eroded inward by 2px → the uncovered
               ring is a crisp stepped border hugging the notches (overlay's black, so the frame is light). */}
-          <div style={{ background: "#cdc9d6", clipPath: STAIRCASE_CLIP, imageRendering: "pixelated" }}>
             <div
               style={{
-                minWidth: 440,
-                maxWidth: "min(90vw, 560px)",
-                padding: 26,
-                paddingTop: 32,
-                background: PANEL_BG,
-                clipPath: staircaseInnerClip(2),
+                background: "var(--color-curb-white)",
+                clipPath: STAIRCASE_CLIP,
                 imageRendering: "pixelated",
-                fontFamily: "var(--font-silkscreen)",
-                display: "flex",
-                flexDirection: "column",
-                gap: 22,
               }}
             >
-              <Dialog.Title
+              <div
                 style={{
+                  minWidth: 440,
+                  maxWidth: "min(90vw, 560px)",
+                  padding: 26,
+                  paddingTop: 32,
+                  background: PANEL_BG,
+                  clipPath: staircaseInnerClip(2),
+                  imageRendering: "pixelated",
                   fontFamily: "var(--font-silkscreen)",
-                  color: "#fff",
-                  fontSize: 18,
-                  letterSpacing: 2,
-                  textAlign: "center",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 22,
                 }}
               >
-                {title}
-              </Dialog.Title>
-              {children}
-              {/* no X — a single centered CLOSE at the bottom (controlled, so just flip open off) */}
-              <PixelButton onClick={() => onOpenChange(false)} className="self-center" {...BUTTON_RED}>
-                CLOSE
-              </PixelButton>
+                <Dialog.Title
+                  style={{
+                    fontFamily: "var(--font-silkscreen)",
+                    color: "#fff",
+                    fontSize: 18,
+                    letterSpacing: 2,
+                    textAlign: "center",
+                  }}
+                >
+                  {title}
+                </Dialog.Title>
+                {children}
+                {/* no X — a single centered CLOSE at the bottom (controlled, so just flip open off) */}
+                <PixelButton
+                  onClick={() => onOpenChange(false)}
+                  className="self-center"
+                  {...BUTTON_RED}
+                >
+                  CLOSE
+                </PixelButton>
+              </div>
             </div>
-          </div>
-        </Dialog.Content>
+          </Dialog.Content>
         </Dialog.Overlay>
       </Dialog.Portal>
     </Dialog.Root>

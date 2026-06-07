@@ -1,6 +1,6 @@
 import type { ControlPoints } from "./BezierCurveEditor"
 import { CurveBadge } from "./CurveBadge"
-import { BOARD_BG } from "./graphTheme"
+import { BOARD_BG } from "../lib/graphTheme"
 import { CURVE_PRESETS, matchPreset } from "@/lib/presets"
 import { LANE_PALETTE } from "@/lib/palette"
 

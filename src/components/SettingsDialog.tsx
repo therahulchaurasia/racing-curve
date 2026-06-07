@@ -74,7 +74,7 @@ export function SettingSegmented<T extends string>({
               cursor: disabled ? "default" : "pointer",
               border: "none",
               borderLeft: i === 0 ? "none" : "2px solid #54545e",
-              background: active ? "#8b6df0" : "transparent",
+              background: active ? "var(--color-violet)" : "transparent",
               color: active ? "#ffffff" : "#7a7787",
             }}
           >

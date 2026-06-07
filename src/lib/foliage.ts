@@ -1,6 +1,8 @@
-// Foliage — single source of truth for the plant scatter.
-// Shared by the /process tuning lab (ProcessPreviews) and the real page background (FoliageLayer).
-// Hook-free + presentational, so it works in both server and client components.
+// Foliage — single source of truth for the plant-scatter DATA + logic (no JSX). The `Clump`
+// component that renders this lives in components/Clump.tsx. Shared by the /process tuning lab
+// (ProcessPreviews) and the real page background (FoliageLayer).
+
+import { mulberry32 } from "./random"
 
 export const PLANTS = [
   "/assets/environment/Plant1.png",
@@ -90,43 +92,6 @@ export const BUSHES: { name: string; parts: ClumpPart[] }[] = [
   { name: "bush pair", parts: [{ i: 2, size: 92, dx: 0 }, { i: 2, size: 66, dx: 56, flip: true }] },
   { name: "bush trio", parts: [{ i: 2, size: 84, dx: 0, flip: true }, { i: 2, size: 100, dx: 30 }, { i: 2, size: 70, dx: 86 }] },
 ]
-
-export function Clump({ parts }: { parts: ClumpPart[] }) {
-  const W = Math.max(...parts.map((p) => p.dx + p.size))
-  const H = Math.max(...parts.map((p) => p.size))
-  return (
-    <div style={{ position: "relative", width: W, height: H }}>
-      {parts.map((p, k) => (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
-          key={k}
-          src={PLANTS[p.i]}
-          alt=""
-          style={{
-            position: "absolute",
-            left: p.dx,
-            bottom: 0,
-            width: p.size,
-            height: p.size,
-            imageRendering: "pixelated",
-            transform: p.flip ? "scaleX(-1)" : undefined,
-          }}
-        />
-      ))}
-    </div>
-  )
-}
-
-// deterministic PRNG (mulberry32) — same seed ⇒ same layout, so the field never jumps on refresh
-export function mulberry32(seed: number) {
-  let a = seed >>> 0
-  return () => {
-    a = (a + 0x6d2b79f5) | 0
-    let t = Math.imul(a ^ (a >>> 15), 1 | a)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
 
 export type FoliageItem = { x: number; y: number; parts: ClumpPart[]; scale: number }
 

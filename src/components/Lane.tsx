@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useRef, useState } from "react"
+import { memo, useId, useRef, useState } from "react"
 import * as Popover from "@radix-ui/react-popover"
 import type { Lane as LaneType } from "@/lib/types"
 import type { ControlPoints } from "./BezierCurveEditor"
@@ -8,9 +8,11 @@ import { BezierCurveEditor } from "./BezierCurveEditor"
 import { CurveBadge } from "./CurveBadge"
 import { CurvePresets } from "./CurvePresets"
 import { PixelButton } from "./PixelButton"
-import { STAIRCASE_CLIP } from "./clipPaths"
+import { STAIRCASE_CLIP } from "../lib/clipPaths"
 import { labelForCurve } from "@/lib/presets"
 import { BUTTON_RED } from "@/lib/palette"
+import { pickCarSprite } from "@/lib/cars"
+import { fmt } from "@/lib/format"
 
 type Props = {
   lane: LaneType
@@ -26,8 +28,8 @@ type Props = {
 // Night-toned road palette — the day-bright tokens (#d44/#f5f5f5 curbs, #5e5e5e asphalt, #e5e5e5
 // dashes, #fff checkers) over-popped against the dark night, so everything is muted/darkened to sit
 // in the scene as "lit at night" rather than daytime.
-const CURB_RED = "#9e3b3b"
-const CURB_WHITE = "#cdc9d6"
+const CURB_RED = "var(--color-curb-red)" // shared tokens (globals.css @theme); used in the gradient below
+const CURB_WHITE = "var(--color-curb-white)"
 const CURB_BG = `repeating-linear-gradient(90deg, ${CURB_RED} 0 18px, ${CURB_WHITE} 18px 36px)`
 // inner lane divider: a dashed line that SEPARATES adjacent lanes (cars drive in their own lane,
 // not over it). Same dash rhythm the road uses elsewhere.
@@ -35,33 +37,14 @@ const INNER_DIVIDER_HEIGHT = 4
 const INNER_DIVIDER_BG =
   "repeating-linear-gradient(90deg, #a9a7b5 0 28px, transparent 28px 56px)"
 
-// trim curve numbers for display: 0.42 → "0.42", 1 → "1", 0 → "0"
-const fmt = (n: number) => Number(n.toFixed(2)).toString()
-
 const CAR_WIDTH = 99
 const CAR_HEIGHT = 42
 
-const CAR_SPRITES = [
-  "/assets/cars/buggy.png",
-  "/assets/cars/formula.png",
-  "/assets/cars/police.png",
-  "/assets/cars/sedan_vintage.png",
-  "/assets/cars/sports_race.png",
-  "/assets/cars/sports_red.png",
-  "/assets/cars/sports_yellow.png",
-  "/assets/cars/vintage.png",
-]
-
-function pickCarSprite(id: string): string {
-  let h = 0
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0
-  return CAR_SPRITES[Math.abs(h) % CAR_SPRITES.length]
-}
 const PAD = 20
 const BADGE_SIZE = 24
 // badge moved to the lane center, so the car starts one PAD off the curb (was PAD+BADGE+PAD)
 const CAR_START = PAD
-const ASPHALT = "#3a3942"
+const ASPHALT = "var(--color-asphalt)" // shared token (globals.css @theme)
 // LANE_HEIGHT and CURB_HEIGHT are multiples of CHECKER_TILE (14) so every lane's start/finish
 // checker starts on a tile boundary and the columns tile CONTINUOUSLY across stacked lanes (no seam)
 const LANE_HEIGHT = 112
@@ -72,7 +55,9 @@ export const START_OFFSET = 100
 const FINISH_OFFSET = 100
 const DELETE_BTN_WIDTH = 30
 
-function CheckerStrip({
+// memo: start/finish checkers don't change during a race, but the lane re-renders every frame (car
+// moves) — memo keeps these SVG-pattern strips out of the per-frame reconcile
+const CheckerStrip = memo(function CheckerStrip({
   offset,
   side,
   top,
@@ -110,22 +95,35 @@ function CheckerStrip({
             height={CHECKER_TILE}
             patternUnits="userSpaceOnUse"
           >
+            {/* fills applied via style (not the `fill` attr) so the var() tokens resolve */}
             <rect
               x={0}
               y={0}
               width={CHECKER_TILE}
               height={CHECKER_TILE}
-              fill={ASPHALT}
+              style={{ fill: ASPHALT }}
             />
-            <rect x={0} y={0} width={half} height={half} fill={CURB_WHITE} />
-            <rect x={half} y={half} width={half} height={half} fill={CURB_WHITE} />
+            <rect
+              x={0}
+              y={0}
+              width={half}
+              height={half}
+              style={{ fill: CURB_WHITE }}
+            />
+            <rect
+              x={half}
+              y={half}
+              width={half}
+              height={half}
+              style={{ fill: CURB_WHITE }}
+            />
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill={`url(#${patId})`} />
       </svg>
     </div>
   )
-}
+})
 
 export function Lane({
   lane,
@@ -155,24 +153,10 @@ export function Lane({
     }, 150)
   }
 
-  // lock the curve picker from the moment the lights start (countdown) through the race: close it
-  // and cancel any pending hover-close timer. The cluster also goes pointer-events:none below so it
-  // can't reopen. This fixes editing during the red-light countdown changing the launched curve
-  // (the solver is snapshotted at green, so whatever was set during the countdown would win).
-  useEffect(() => {
-    if (!locked) return
-    if (closeTimerRef.current !== null) {
-      clearTimeout(closeTimerRef.current)
-      closeTimerRef.current = null
-    }
-    setOpen(false)
-  }, [locked])
-
   // one place that keeps the lane's label honest for both preset clicks and knob drags
   const applyCurve = (cp: ControlPoints) =>
     onChange({ ...lane, controlPoints: cp, label: labelForCurve(cp) })
 
-  const carLeft = `calc(${CAR_START}px + ${progress} * (100% - ${CAR_START + CAR_WIDTH + PAD}px))`
   const carSprite = pickCarSprite(lane.id)
   const chassisWidth = onRemove
     ? `calc(100% - ${DELETE_BTN_WIDTH}px - 2px)`
@@ -186,11 +170,16 @@ export function Lane({
   // curb already get their asphalt-band correction below, so only the curb-less middle gets this.
   const opticalNudge = !showTopCurb && !showBottomCurb ? 3 : 0
 
+  // popover is DERIVED closed while locked (countdown/race) — no sync-effect needed. The cluster also
+  // gets pointer-events:none below, so it can't be reopened during the lock. This keeps the launched
+  // curve fixed (the solver snapshots at green).
+  const pickerOpen = open && !locked
+
   return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
+    <Popover.Root open={pickerOpen} onOpenChange={setOpen}>
       <div
         className="relative flex w-full gap-[2px]"
-        style={{ height: LANE_HEIGHT, zIndex: open ? 50 : undefined }}
+        style={{ height: LANE_HEIGHT, zIndex: pickerOpen ? 50 : undefined }}
       >
         <div
           className="relative overflow-hidden shrink-0"
@@ -213,29 +202,58 @@ export function Lane({
           {!showBottomCurb && (
             <div
               className="absolute bottom-0 left-0 w-full"
-              style={{ height: INNER_DIVIDER_HEIGHT, background: INNER_DIVIDER_BG }}
+              style={{
+                height: INNER_DIVIDER_HEIGHT,
+                background: INNER_DIVIDER_BG,
+              }}
             />
           )}
-          <CheckerStrip side="left" offset={START_OFFSET} top={topInset} bottom={bottomInset} />
-          <CheckerStrip side="right" offset={FINISH_OFFSET} top={topInset} bottom={bottomInset} />
+          <CheckerStrip
+            side="left"
+            offset={START_OFFSET}
+            top={topInset}
+            bottom={bottomInset}
+          />
+          <CheckerStrip
+            side="right"
+            offset={FINISH_OFFSET}
+            top={topInset}
+            bottom={bottomInset}
+          />
 
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={carSprite}
-            alt=""
+          {/* car carrier: a track sized via left/right to the car's travel distance, so translating
+              it by progress·100% (100% = the track's OWN width = the travel) moves the car the exact
+              amount — pure CSS, exact at any width, no measuring. transform = compositor only. */}
+          <div
             className="absolute"
             style={{
-              left: carLeft,
-              top: "50%",
-              width: CAR_WIDTH,
-              height: CAR_HEIGHT,
-              objectFit: "contain",
-              transform: "translateY(-50%)",
-              imageRendering: "pixelated",
-              // dim + slightly desaturate the day-bright sprites so they read as lit at night
-              filter: "brightness(0.82) saturate(0.9)",
+              left: CAR_START,
+              right: CAR_WIDTH + PAD,
+              top: 0,
+              bottom: 0,
+              transform: `translateX(${progress * 100}%)`,
+              willChange: "transform",
+              pointerEvents: "none",
             }}
-          />
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={carSprite}
+              alt=""
+              className="absolute"
+              style={{
+                left: 0,
+                top: "50%",
+                width: CAR_WIDTH,
+                height: CAR_HEIGHT,
+                objectFit: "contain",
+                transform: "translateY(-50%)",
+                imageRendering: "pixelated",
+                // dim + slightly desaturate the day-bright sprites so they read as lit at night
+                filter: "brightness(0.82) saturate(0.9)",
+              }}
+            />
+          </div>
 
           {/* centered curve cluster: badge (opens picker) + label/values (copyable). Dims during a
           race so the car sweeping through the middle stays clean but the curve stays readable. */}

@@ -1,12 +1,10 @@
 import { ProcessPreviews } from "@/components/ProcessPreviews"
-import { PixelGround } from "@/components/PixelGround"
 
+// PixelGround (night-dirt world ground) is supplied by the root layout.
 export default function ProcessPage() {
   return (
-    <PixelGround>
-      <main className="min-h-screen p-8 flex items-center justify-center">
-        <ProcessPreviews />
-      </main>
-    </PixelGround>
+    <main className="min-h-screen p-8 flex items-center justify-center">
+      <ProcessPreviews />
+    </main>
   )
 }

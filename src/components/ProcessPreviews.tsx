@@ -2,23 +2,27 @@
 
 import { useEffect, useId, useMemo, useState } from "react"
 import { cubicBezier } from "@/lib/cubicBezier"
+import { bezierPathD, bezierHandles } from "@/lib/bezierPath"
 import { darken } from "@/lib/color"
 import { PixelButton } from "./PixelButton"
 import { CurveGraph } from "./CurveGraph"
 import { Panel } from "./Panel"
 import { BezierCurveEditor } from "./BezierCurveEditor"
 import { StartLight } from "./StartLight"
-import { RaceLights, StartGantry, useStartLightSequence } from "./RaceLights"
+import { StartGantry, useStartLightSequence } from "./RaceLights"
 import { RacingCurvesLogo } from "./RacingCurvesLogo"
 import { SettingsCog } from "./SettingsCog"
 import { SettingsDialog, SettingRow, SettingSegmented } from "./SettingsDialog"
 import { HelpButton } from "./HelpButton"
 import { AboutDialog } from "./AboutDialog"
 import type { LightsStyle } from "@/lib/settings"
-import { Mountains, FRONT_RIDGE, BACK_RIDGE } from "./Mountains"
+import { Mountains } from "./Mountains"
+import { FRONT_RIDGE, BACK_RIDGE } from "@/lib/mountains"
 import { NightSky } from "./NightSky"
-import { Star, StarField, STAR_COLORS, type StarShape } from "./Stars"
-import { CLUMPS, Clump, scatterFoliage } from "./foliage"
+import { Star, StarField } from "./Stars"
+import { STAR_COLORS, type StarShape } from "@/lib/stars"
+import { Clump } from "./Clump"
+import { CLUMPS, scatterFoliage } from "@/lib/foliage"
 import type { Lane as LaneType } from "@/lib/types"
 import type { ControlPoints } from "./BezierCurveEditor"
 
@@ -128,74 +132,10 @@ export function ProcessPreviews() {
 
   return (
     <div className="flex flex-col gap-12 w-full max-w-[1100px]">
-      <Section title="Settings — cog + modal">
-        <div className="flex items-center gap-8 p-6" style={{ background: "#181445" }}>
-          <div className="flex flex-col items-center gap-2">
-            <div className="flex gap-2">
-              <HelpButton onClick={() => setDemoAboutOpen(true)} />
-              <SettingsCog onClick={() => setSettingsOpen(true)} />
-            </div>
-            <span className="text-[10px] text-[#7a6fb0] font-mono">? = about · cog = settings</span>
-          </div>
-          <PixelButton onClick={() => setSettingsOpen(true)}>OPEN SETTINGS</PixelButton>
-          <PixelButton onClick={() => setDemoAboutOpen(true)}>OPEN ABOUT</PixelButton>
-        </div>
-        <AboutDialog open={demoAboutOpen} onOpenChange={setDemoAboutOpen} />
-        <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-          <SettingRow label="CURVE GRAPH">
-            <SettingSegmented
-              value={demoShowGraph ? "show" : "hide"}
-              options={[
-                { value: "show", label: "SHOW" },
-                { value: "hide", label: "HIDE" },
-              ]}
-              onChange={(v) => setDemoShowGraph(v === "show")}
-            />
-          </SettingRow>
-          <SettingRow label="START LIGHTS">
-            <SettingSegmented
-              value={demoShowLights ? "show" : "hide"}
-              options={[
-                { value: "show", label: "SHOW" },
-                { value: "hide", label: "HIDE" },
-              ]}
-              onChange={(v) => {
-                const show = v === "show"
-                setDemoShowLights(show)
-                if (!show) setDemoLightsStyle("simple")
-              }}
-            />
-          </SettingRow>
-          <SettingRow label="LIGHT STYLE">
-            <SettingSegmented
-              value={demoLightsStyle}
-              options={[
-                { value: "sequence", label: "SEQUENCE" },
-                { value: "simple", label: "SIMPLE" },
-              ]}
-              onChange={setDemoLightsStyle}
-              disabled={!demoShowLights}
-            />
-          </SettingRow>
-        </SettingsDialog>
-        <Note>
-          Settings cog (two crossed pluses + masked centre hole) and the radix Dialog modal (focus
-          trap, ESC/backdrop close, ARIA — we only skin it: Panel bg, staircase corners, Silkscreen).
-          Rows use the shared <code>SettingRow</code>. Iterate the cog border + modal layout here, then
-          it&apos;s already live (same components drive the real app).
-        </Note>
-      </Section>
+      <GroupHeading>Environment</GroupHeading>
 
       <Section title="Night backdrop — two mountain ridges">
         <MountainLab />
-        <Note>
-          Two <code>&lt;polygon&gt;</code> ridges, back→front, same shape engine — upper envelope
-          (smooth-max) of rounded cosine bumps with asymmetric flanks; gaps are valleys (~65%, varied
-          depth) or connected saddles. Back = darker + TALLER (peaks rise above the front, dominant
-          far range); front = lighter + shorter, sitting in front. Each generated independently from
-          its own seed + peaks. Bumps overscan + the viewBox chops them at the edges. Tune back/front
-          peaks &amp; amp; regen each. Colors + sky are placeholder — tuning those next; stars after.
-        </Note>
       </Section>
 
       <Section title="Stars — shapes">
@@ -228,35 +168,42 @@ export function ProcessPreviews() {
             </div>
           </div>
         </div>
-        <Note>
-          Three forms: <code>dot</code> = graph-dot octagon (shared BULB_CLIP), <code>plus</code> =
-          square boss + thinner protruding arms (composite sparkle), <code>square</code> = pixel
-          square. Bright tints + a <code>drop-shadow</code> glow (follows the clipped silhouette) so
-          they pop. Next: scatter a seeded mix across the sky behind the mountains.
-        </Note>
       </Section>
 
-      <Section title="Ground feel — skew (current) vs lay-down">
-        <div className="flex flex-col gap-5">
+      <Section title="Foliage — variations from 3 sprites">
+        <FoliageLab />
+      </Section>
+
+      <Section title="Foliage — spread (jittered grid)">
+        <FoliageField />
+      </Section>
+
+      <GroupHeading>Cars &amp; Lanes</GroupHeading>
+
+      <Section title="Cars — native + scaled">
+        <div className="grid grid-cols-2 gap-3">
+          {CAR_SPRITES.map((c) => (
+            <CarCell key={c.src} sprite={c} />
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Pixel">
+        <PixelLane color="#ff5a3c" progress={p1} />
+        <PixelLane color="#3b82f6" progress={p2} />
+      </Section>
+
+      <Section title="Flat lane — tires planted (2D)">
+        <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <div className="text-xs text-[#888] font-mono">
-              A — skewX(-7°), car centered (the &quot;sliding sideways&quot; feel)
-            </div>
-            <SkewLane progress={p1} sprite={CAR_SPRITES[5]} />
+            <div className="text-xs text-[#888] font-mono">planted on a ground line — no shadow</div>
+            <PlantedLane progress={p1} sprite={CAR_SPRITES[5]} />
           </div>
           <div className="flex flex-col gap-1">
-            <div className="text-xs text-[#888] font-mono">
-              B — rotateX lay-down + tires planted on the surface
-            </div>
-            <LaydownLane progress={p1} sprite={CAR_SPRITES[5]} />
+            <div className="text-xs text-[#888] font-mono">planted + soft contact shadow</div>
+            <PlantedLane progress={p1} sprite={CAR_SPRITES[2]} softShadow />
           </div>
         </div>
-        <Note>
-          A shears the road sideways (skewX) and floats the car in the band → reads as sliding. B
-          tips the asphalt forward (perspective + rotateX) so its top surface reads as ground, and
-          plants the car&apos;s wheels on the near edge → reads as driving on it. The receding
-          centerline sells the ground plane. Tunable: tilt angle, perspective distance, car baseline.
-        </Note>
       </Section>
 
       <Section title="Lay-down — stacked lanes">
@@ -276,124 +223,59 @@ export function ProcessPreviews() {
           progresses={Array.from({ length: laydownN }, () => loopT)}
           sprites={Array.from({ length: laydownN }, (_, i) => CAR_SPRITES[i % CAR_SPRITES.length])}
         />
-        <Note>
-          The lay-down floor with multiple lanes: one tilted asphalt plane, lanes stacked into its
-          depth (front = near/large, back = far/small), each car planted on its lane and auto-scaled
-          by perspective. Crank the lane count to see how it holds. The trade-off to judge: far lanes
-          shrink — depth looks great, but the back curves get smaller / harder to read.
-        </Note>
       </Section>
 
-      <Section title="Flat lane — tires planted (2D)">
-        <div className="flex flex-col gap-4">
+      <Section title="Lane skew — angle ladder">
+        <div className="flex flex-col gap-8">
+          {[0, 3, 5, 7, 9].map((deg) => (
+            <div key={deg} className="flex flex-col gap-2">
+              <div className="text-xs text-[#888] font-mono">
+                {deg === 0 ? "0° (flat — reference)" : `skewX -${deg}°`}
+              </div>
+              <TiltLane angle={deg} progress={p1} sprite={CAR_SPRITES[5]} />
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Ground feel — skew (current) vs lay-down">
+        <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-1">
-            <div className="text-xs text-[#888] font-mono">planted on a ground line — no shadow</div>
-            <PlantedLane progress={p1} sprite={CAR_SPRITES[5]} />
+            <div className="text-xs text-[#888] font-mono">
+              A — skewX(-7°), car centered (the &quot;sliding sideways&quot; feel)
+            </div>
+            <SkewLane progress={p1} sprite={CAR_SPRITES[5]} />
           </div>
           <div className="flex flex-col gap-1">
-            <div className="text-xs text-[#888] font-mono">planted + soft contact shadow</div>
-            <PlantedLane progress={p1} sprite={CAR_SPRITES[2]} softShadow />
+            <div className="text-xs text-[#888] font-mono">
+              B — rotateX lay-down + tires planted on the surface
+            </div>
+            <LaydownLane progress={p1} sprite={CAR_SPRITES[5]} />
           </div>
         </div>
-        <Note>
-          Flat 2D, no transform. The car&apos;s wheels rest on a defined ground line (not floating in
-          the band); the asphalt is a touch darker below that line with a lit contact edge, and the
-          dashes sit on the road body — so it reads as sitting ON the surface. Lanes stay equal size
-          (fair comparison), and it&apos;s trivial to style. Second row adds a soft, feathered contact
-          shadow (not the hard stamped ellipse). Tunable: ground-line height, contact darkness.
-        </Note>
       </Section>
 
-      <Section title="Start lights — colors (banded glow)">
-        <div className="flex gap-6">
-          {(["red", "amber", "green"] as const).map((color) => (
-            <div key={color} className="flex flex-col items-center gap-3 p-4">
-              <div className="text-xs text-[#1a1a1a] font-mono">{color}</div>
-              <div className="flex items-center gap-6">
-                <div className="flex flex-col items-center gap-1">
-                  <StartLight color={color} on size={40} />
-                  <span className="text-[10px] text-[#444] font-mono">on</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <StartLight color={color} size={40} />
-                  <span className="text-[10px] text-[#444] font-mono">off</span>
-                </div>
+      <Section title="Finish line position">
+        <div className="flex flex-col gap-10">
+          {[0.78, 0.85, 0.92].map((fp) => (
+            <div key={fp} className="flex flex-col gap-2">
+              <div className="text-xs text-[#888] font-mono">
+                finish line at p={fp}
+              </div>
+              <div className="flex flex-col gap-[3px]">
+                {GRAPH_LANES.map((l, i) => (
+                  <TiltLane
+                    key={l.id}
+                    angle={7}
+                    sprite={CAR_SPRITES[FINISH_SPRITES[i]]}
+                    progress={graphProgress[i]}
+                    finishP={fp}
+                  />
+                ))}
               </div>
             </div>
           ))}
         </div>
-        <Note>
-          Banded radial glow (hot center → dark rim) like the reference, bulb
-          shape, drop-shadow halo. Off = flat dark tint. Tweakable: band split,
-          center offset, ramp colors. Next: the 5×4 tree.
-        </Note>
-      </Section>
-
-      <Section title="Logo — racing curves">
-        <div className="flex">
-          <RacingCurvesLogo />
-        </div>
-        <Note>
-          VT323, thick stroked border with a 2-step notch on the top-right
-          corner only. Transparent interior — the border now traces the notch
-          via an SVG outline so it shows without a fill. Tunable: NOTCH/STEP
-          size, borderWidth, fontSize, colors.
-        </Note>
-      </Section>
-
-      <Section title="Foliage — variations from 3 sprites">
-        <FoliageLab />
-        <Note>
-          Three base sprites (48×48) combined into curated clumps — 2–3 sprites overlapped on a
-          shared bottom baseline, array order = back→front, mirror via scaleX(-1). No new art, no
-          canvas, pixel-crisp. These types (plus the bare sprites as standalones) feed the seeded
-          spread in the next section. Data + Clump + scatter live in foliage.tsx.
-        </Note>
-      </Section>
-
-      <Section title="Foliage — spread (jittered grid)">
-        <FoliageField />
-        <Note>
-          Seeded jittered grid: cols × rows cells; each cell is filled with chance = fill, and the
-          kept ones get one random foliage type dropped at a random offset (jitter) inside the cell,
-          at a random scale. Lower items draw over higher ones for depth. Stable per seed — regen
-          bumps it, so it never jumps on refresh. No center-masking here (no content to dodge); on
-          the real page we&apos;ll skip cells overlapping the road/cards.
-        </Note>
-      </Section>
-
-      <Section title="Start lights — gantry over the start line">
-        <div className="flex gap-2">
-          <button
-            onClick={lights.start}
-            className="text-xs px-2 py-1 font-mono bg-[#a3e635] text-black"
-          >
-            {lights.running ? "playing…" : "play sequence"}
-          </button>
-          <button
-            onClick={lights.reset}
-            className="text-xs px-2 py-1 font-mono bg-[#333] text-[#ccc]"
-          >
-            reset
-          </button>
-        </div>
-        {/* gantry standing on the road's top curb at the start line, over a night sky + road strip */}
-        <div style={{ width: "100%", maxWidth: 520 }}>
-          <div style={{ background: "linear-gradient(180deg, #1d1850, #3a2f72)", paddingTop: 18 }}>
-            <div className="flex justify-center">
-              <StartGantry redColumns={lights.redColumns} greenOn={lights.greenOn} />
-            </div>
-          </div>
-          {/* the road the rods plant on: night curb + asphalt */}
-          <div style={{ height: 14, background: "repeating-linear-gradient(90deg, #9e3b3b 0 18px, #cdc9d6 18px 36px)" }} />
-          <div style={{ height: 40, background: "#3a3942" }} />
-        </div>
-        <Note>
-          Gantry = the RaceLights panel flipped 180° with two rods mounted on the road&apos;s top
-          curb at the start line (vs floating in the sky). Same sequence/driver
-          (useStartLightSequence); the panel uses <code>reverse</code> so the 180° flip still reads
-          left→right on screen. Tunable: rod height/width/inset, panel size, mount x.
-        </Note>
       </Section>
 
       <Section title="Merged road (continuous)">
@@ -423,60 +305,9 @@ export function ProcessPreviews() {
             finishP={0.92}
           />
         </div>
-        <Note>
-          One skewed road floor (asphalt + outer curbs + dashed lane dividers).
-          Start/finish checkers and cars live in an upright overlay, so the
-          gates stand straight and stay pinned no matter how many lanes — only
-          the floor tilts. Cars sit flush on the straight start line. Add/remove
-          a car grows/shrinks the road by one band; gates don&apos;t move.
-        </Note>
       </Section>
 
-      <Section title="Lane skew — angle ladder">
-        <div className="flex flex-col gap-8">
-          {[0, 3, 5, 7, 9].map((deg) => (
-            <div key={deg} className="flex flex-col gap-2">
-              <div className="text-xs text-[#888] font-mono">
-                {deg === 0 ? "0° (flat — reference)" : `skewX -${deg}°`}
-              </div>
-              <TiltLane angle={deg} progress={p1} sprite={CAR_SPRITES[5]} />
-            </div>
-          ))}
-        </div>
-        <Note>
-          Committed to skewX (no perspective). Reference is nearly flat, so
-          these are small. Car stays flat &amp; upright on top; only the road
-          plane skews. Tell me the degree that feels right.
-        </Note>
-      </Section>
-
-      <Section title="Finish line position">
-        <div className="flex flex-col gap-10">
-          {[0.78, 0.85, 0.92].map((fp) => (
-            <div key={fp} className="flex flex-col gap-2">
-              <div className="text-xs text-[#888] font-mono">
-                finish line at p={fp}
-              </div>
-              <div className="flex flex-col gap-[3px]">
-                {GRAPH_LANES.map((l, i) => (
-                  <TiltLane
-                    key={l.id}
-                    angle={7}
-                    sprite={CAR_SPRITES[FINISH_SPRITES[i]]}
-                    progress={graphProgress[i]}
-                    finishP={fp}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-        <Note>
-          Same 7° lane, repeated. Curve is the only driver: cars stop at p=1 (no
-          marker there), checker is the finish/timing line at the given p.
-          ease-out crosses first, ease-in last, all rest together past the line.
-        </Note>
-      </Section>
+      <GroupHeading>Misc</GroupHeading>
 
       <Section title="Buttons">
         <div className="flex flex-col gap-6">
@@ -539,11 +370,86 @@ export function ProcessPreviews() {
             </div>
           </div>
         </div>
-        <Note>
-          Top row uses the current (night-green) default. Bottom swatch = vibrant night candidates
-          with a soft glow — cyan / violet / pink / amber — to pick the primary that best syncs with
-          the theme. Once chosen, I set it as the PixelButton default.
-        </Note>
+      </Section>
+
+      <Section title="Curve graph">
+        <BeforeAfter
+          before={<OldGraphSnapshot />}
+          after={
+            <Panel>
+              <CurveGraph lanes={GRAPH_LANES} progress={graphProgress} currentT={loopT} />
+            </Panel>
+          }
+        />
+      </Section>
+
+      <Section title="Bezier curve editor">
+        <BeforeAfter
+          before={<OldEditorSnapshot />}
+          after={
+            <div style={{ width: SNAP }}>
+              <BezierCurveEditor value={editorCp} onChange={setEditorCp} />
+            </div>
+          }
+        />
+      </Section>
+
+      <Section title="Settings — cog + modal">
+        <div className="flex items-center gap-8 p-6" style={{ background: "#181445" }}>
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex gap-2">
+              <HelpButton onClick={() => setDemoAboutOpen(true)} />
+              <SettingsCog onClick={() => setSettingsOpen(true)} />
+            </div>
+            <span className="text-[10px] text-[#7a6fb0] font-mono">? = about · cog = settings</span>
+          </div>
+          <PixelButton onClick={() => setSettingsOpen(true)}>OPEN SETTINGS</PixelButton>
+          <PixelButton onClick={() => setDemoAboutOpen(true)}>OPEN ABOUT</PixelButton>
+        </div>
+        <AboutDialog open={demoAboutOpen} onOpenChange={setDemoAboutOpen} />
+        <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+          <SettingRow label="CURVE GRAPH">
+            <SettingSegmented
+              value={demoShowGraph ? "show" : "hide"}
+              options={[
+                { value: "show", label: "SHOW" },
+                { value: "hide", label: "HIDE" },
+              ]}
+              onChange={(v) => setDemoShowGraph(v === "show")}
+            />
+          </SettingRow>
+          <SettingRow label="START LIGHTS">
+            <SettingSegmented
+              value={demoShowLights ? "show" : "hide"}
+              options={[
+                { value: "show", label: "SHOW" },
+                { value: "hide", label: "HIDE" },
+              ]}
+              onChange={(v) => {
+                const show = v === "show"
+                setDemoShowLights(show)
+                if (!show) setDemoLightsStyle("simple")
+              }}
+            />
+          </SettingRow>
+          <SettingRow label="LIGHT STYLE">
+            <SettingSegmented
+              value={demoLightsStyle}
+              options={[
+                { value: "sequence", label: "SEQUENCE" },
+                { value: "simple", label: "SIMPLE" },
+              ]}
+              onChange={setDemoLightsStyle}
+              disabled={!demoShowLights}
+            />
+          </SettingRow>
+        </SettingsDialog>
+      </Section>
+
+      <Section title="Logo — racing curves">
+        <div className="flex">
+          <RacingCurvesLogo />
+        </div>
       </Section>
 
       <Section title="Start prompt">
@@ -551,78 +457,56 @@ export function ProcessPreviews() {
           <PromptCell label="blink (800/800)" blink />
           <PromptCell label="steady" />
         </div>
-        <Note>
-          Replaces PLAY button. Lives fixed bottom-center of viewport on main
-          page. Space starts the race; reappears when race ends.
-        </Note>
       </Section>
 
-      <Section title="Curve graph">
-        <div className="flex justify-center">
-          <Panel>
-            <CurveGraph
-              lanes={GRAPH_LANES}
-              progress={graphProgress}
-              currentT={loopT}
-            />
-          </Panel>
-        </div>
-        <Note>
-          Night skin: asphalt board (#3a3942) matching the road, faint white grid,
-          muted-light ticks. Enclosed in the shared billboard <code>Panel</code>
-          (same as the start lights) — the panel owns the stepped corners; the
-          graph itself is a plain rectangle. No sweep line; color-matched dots
-          track &quot;now&quot;.
-        </Note>
-      </Section>
+      <GroupHeading>Unsorted — to arrange</GroupHeading>
 
-      <Section title="Bezier curve editor">
-        <div className="flex justify-center">
-          <div style={{ width: 260 }}>
-            <BezierCurveEditor value={editorCp} onChange={setEditorCp} />
-          </div>
-        </div>
-        <Note>
-          Lives inside the lane popover. Same reskin pass needed — pixel grid,
-          square handles, crisp 2px frame.
-        </Note>
-      </Section>
-
-      <Section title="Lane popover — curb frame">
-        <div className="grid grid-cols-2 gap-4">
-          <CurbFrameCell label="all white" color="#f5f5f5">
-            <BezierCurveEditor value={editorCp} onChange={setEditorCp} />
-          </CurbFrameCell>
-          <CurbFrameCell label="all red" color="#d44">
-            <BezierCurveEditor value={editorCp} onChange={setEditorCp} />
-          </CurbFrameCell>
-        </div>
-        <Note>
-          Single-color 14px frame around the editor. Compare both, pick the one
-          that reads right.
-        </Note>
-      </Section>
-
-      <Section title="Cars — native + scaled">
-        <div className="grid grid-cols-2 gap-3">
-          {CAR_SPRITES.map((c) => (
-            <CarCell key={c.src} sprite={c} />
+      <Section title="Start lights — colors (banded glow)">
+        <div className="flex gap-6">
+          {(["red", "amber", "green"] as const).map((color) => (
+            <div key={color} className="flex flex-col items-center gap-3 p-4">
+              <div className="text-xs text-[#1a1a1a] font-mono">{color}</div>
+              <div className="flex items-center gap-6">
+                <div className="flex flex-col items-center gap-1">
+                  <StartLight color={color} on size={40} />
+                  <span className="text-[10px] text-[#444] font-mono">on</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <StartLight color={color} size={40} />
+                  <span className="text-[10px] text-[#444] font-mono">off</span>
+                </div>
+              </div>
+            </div>
           ))}
         </div>
-        <Note>
-          Each car shown on a {PIXEL_SCALE}px pixel grid. Numbers = native pixel
-          dimensions. Same logical box ({36 * PIXEL_SCALE}×{14 * PIXEL_SCALE}px)
-          for comparison — bounding to the widest+tallest sprite.
-        </Note>
       </Section>
 
-      <Section title="Pixel">
-        <PixelLane color="#ff5a3c" progress={p1} />
-        <PixelLane color="#3b82f6" progress={p2} />
-        <Note>
-          Cars are pure CSS blocks. Real personality wants sprite assets — code
-          blocks max out at &quot;8-bit hatchback&quot;.
-        </Note>
+      <Section title="Start lights — gantry over the start line">
+        <div className="flex gap-2">
+          <button
+            onClick={lights.start}
+            className="text-xs px-2 py-1 font-mono bg-[#a3e635] text-black"
+          >
+            {lights.running ? "playing…" : "play sequence"}
+          </button>
+          <button
+            onClick={lights.reset}
+            className="text-xs px-2 py-1 font-mono bg-[#333] text-[#ccc]"
+          >
+            reset
+          </button>
+        </div>
+        {/* gantry standing on the road's top curb at the start line, over a night sky + road strip */}
+        <div style={{ width: "100%", maxWidth: 520 }}>
+          <div style={{ background: "linear-gradient(180deg, #1d1850, #3a2f72)", paddingTop: 18 }}>
+            <div className="flex justify-center">
+              <StartGantry redColumns={lights.redColumns} greenOn={lights.greenOn} />
+            </div>
+          </div>
+          {/* the road the rods plant on: night curb + asphalt */}
+          <div style={{ height: 14, background: "repeating-linear-gradient(90deg, #9e3b3b 0 18px, #cdc9d6 18px 36px)" }} />
+          <div style={{ height: 40, background: "#3a3942" }} />
+        </div>
       </Section>
     </div>
   )
@@ -668,41 +552,6 @@ function PromptCell({
         >
           PRESS SPACE TO START
         </span>
-      </div>
-    </div>
-  )
-}
-
-const popoverClip = `polygon(
-  0 6px, 3px 6px, 3px 3px, 6px 3px, 6px 0,
-  calc(100% - 6px) 0, calc(100% - 6px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 6px, 100% 6px,
-  100% calc(100% - 6px), calc(100% - 3px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px), calc(100% - 6px) calc(100% - 3px), calc(100% - 6px) 100%,
-  6px 100%, 6px calc(100% - 3px), 3px calc(100% - 3px), 3px calc(100% - 6px), 0 calc(100% - 6px)
-)`
-
-function CurbFrameCell({
-  label,
-  color,
-  children,
-}: {
-  label: string
-  color: string
-  children: React.ReactNode
-}) {
-  const CURB = 14
-  return (
-    <div className="flex flex-col gap-2 p-3 bg-[#111] rounded border border-[#2a2a2a]">
-      <div className="text-xs text-[#ccc] font-mono">{label}</div>
-      <div
-        style={{
-          position: "relative",
-          padding: CURB,
-          background: color,
-          clipPath: popoverClip,
-          imageRendering: "pixelated",
-        }}
-      >
-        <div style={{ position: "relative" }}>{children}</div>
       </div>
     </div>
   )
@@ -770,8 +619,209 @@ function Section({
   )
 }
 
-function Note({ children }: { children: React.ReactNode }) {
-  return <p className="text-xs text-[#666] italic">{children}</p>
+// Top-level group label — bigger/brighter than a Section h2, with a rule + extra top space, to split
+// the page into themed groups (Environment / Cars & Lanes / Misc / …).
+function GroupHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h1 className="text-xl tracking-wider uppercase text-white font-mono border-b border-[#2a2a2a] pb-2 mt-6">
+      {children}
+    </h1>
+  )
+}
+
+// ---- before/after exhibit (curve graph + bezier editor) ----------------------------------------
+// The graph + editor were reskinned in place (day → night). To show the evolution on the process
+// page, these are FROZEN static snapshots of the OLD day-styled look (recreated from git history) —
+// non-interactive, purely visual. The "after" side renders the real, current components.
+
+const DAY_BG = "#5e5e5e"
+const DAY_FRAME = "#2a2a2a"
+const DAY_GRID = "rgba(255,255,255,0.06)"
+const DAY_MID = "rgba(255,255,255,0.12)"
+const DAY_GUIDE = "rgba(255,255,255,0.35)"
+const SNAP = 230 // snapshot box size
+
+const snapClip = `polygon(
+  0 6px, 3px 6px, 3px 3px, 6px 3px, 6px 0,
+  calc(100% - 6px) 0, calc(100% - 6px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 6px, 100% 6px,
+  100% calc(100% - 6px), calc(100% - 3px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px), calc(100% - 6px) calc(100% - 3px), calc(100% - 6px) 100%,
+  6px 100%, 6px calc(100% - 3px), 3px calc(100% - 3px), 3px calc(100% - 6px), 0 calc(100% - 6px)
+)`
+const snapKnobClip = `polygon(
+  4px 0, calc(100% - 4px) 0,
+  calc(100% - 4px) 2px, calc(100% - 2px) 2px,
+  calc(100% - 2px) 4px, 100% 4px,
+  100% calc(100% - 4px), calc(100% - 2px) calc(100% - 4px),
+  calc(100% - 2px) calc(100% - 2px), calc(100% - 4px) calc(100% - 2px),
+  calc(100% - 4px) 100%, 4px 100%,
+  4px calc(100% - 2px), 2px calc(100% - 2px),
+  2px calc(100% - 4px), 0 calc(100% - 4px),
+  0 4px, 2px 4px, 2px 2px, 4px 2px
+)`
+
+// big gray arrow between the before + after
+function Arrow() {
+  return <div className="text-3xl text-[#666] font-mono px-1 shrink-0 self-center">→</div>
+}
+
+// labelled wrapper so before/after read as a pair
+function BeforeAfter({ before, after }: { before: React.ReactNode; after: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex flex-col gap-1">
+        <span className="text-[10px] text-[#7a6fb0] font-mono">before (day)</span>
+        {before}
+      </div>
+      <Arrow />
+      <div className="flex flex-col gap-1">
+        <span className="text-[10px] text-[#7a6fb0] font-mono">after (night)</span>
+        {after}
+      </div>
+    </div>
+  )
+}
+
+// frozen day-styled CurveGraph: square board, faint grid + brighter midlines, the same curves, and
+// the OLD axis labels (0 / t=1 / p=1, dark) — since renamed to time/progress.
+function OldGraphSnapshot() {
+  return (
+    <div
+      className="relative"
+      style={{
+        width: SNAP,
+        height: SNAP,
+        background: DAY_BG,
+        clipPath: snapClip,
+        boxShadow: `inset 0 0 0 2px ${DAY_FRAME}`,
+        imageRendering: "pixelated",
+      }}
+    >
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        shapeRendering="crispEdges"
+        style={{ width: "100%", height: "100%", display: "block" }}
+      >
+        {[10, 20, 30, 40, 50, 60, 70, 80, 90].map((v) => (
+          <g key={v}>
+            <line x1={v} y1={0} x2={v} y2={100} stroke={DAY_GRID} strokeWidth={0.3} vectorEffect="non-scaling-stroke" />
+            <line x1={0} y1={v} x2={100} y2={v} stroke={DAY_GRID} strokeWidth={0.3} vectorEffect="non-scaling-stroke" />
+          </g>
+        ))}
+        <line x1={50} y1={0} x2={50} y2={100} stroke={DAY_MID} strokeWidth={0.6} vectorEffect="non-scaling-stroke" />
+        <line x1={0} y1={50} x2={100} y2={50} stroke={DAY_MID} strokeWidth={0.6} vectorEffect="non-scaling-stroke" />
+        {GRAPH_LANES.map((lane) => (
+          <path
+            key={lane.id}
+            d={bezierPathD(lane.controlPoints)}
+            stroke={lane.color}
+            strokeWidth={3}
+            strokeLinecap="square"
+            fill="none"
+            vectorEffect="non-scaling-stroke"
+            shapeRendering="geometricPrecision"
+          />
+        ))}
+      </svg>
+      <SnapLabel pos="bl">0</SnapLabel>
+      <SnapLabel pos="br">t=1</SnapLabel>
+      <SnapLabel pos="tl">p=1</SnapLabel>
+    </div>
+  )
+}
+
+function SnapLabel({ pos, children }: { pos: "bl" | "br" | "tl"; children: React.ReactNode }) {
+  const map = {
+    bl: { left: 6, bottom: 6 },
+    br: { right: 6, bottom: 6 },
+    tl: { left: 6, top: 6 },
+  } as const
+  return (
+    <div
+      className="absolute pointer-events-none select-none"
+      style={{
+        ...map[pos],
+        fontFamily: "var(--font-silkscreen)",
+        fontSize: 11,
+        color: "#1a1a1a",
+        letterSpacing: "0.08em",
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+// frozen day-styled BezierCurveEditor: day asphalt, even 20×20 grid pattern, dashed guides, white
+// curve + two white jigsaw knobs. Static (non-interactive) at a fixed curve.
+function OldEditorSnapshot() {
+  const patId = useId()
+  const cp: [number, number, number, number] = [0.42, 0, 0.58, 1]
+  const { h1x, h1y, h2x, h2y } = bezierHandles(cp)
+  const pathD = `M 0 100 C ${h1x} ${h1y} ${h2x} ${h2y} 100 0`
+  const KNOB = 14
+  const PAD = KNOB / 2
+  const inner = SNAP - PAD * 2
+  return (
+    <div style={{ width: SNAP, height: SNAP, position: "relative" }}>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: DAY_BG,
+          clipPath: snapClip,
+          boxShadow: `inset 0 0 0 2px ${DAY_FRAME}`,
+          imageRendering: "pixelated",
+        }}
+      >
+        <svg
+          width="100%"
+          height="100%"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          shapeRendering="crispEdges"
+          style={{ position: "absolute", inset: 2, width: "calc(100% - 4px)", height: "calc(100% - 4px)" }}
+        >
+          <defs>
+            <pattern id={patId} x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+              <line x1="20" y1="0" x2="20" y2="20" stroke={DAY_GRID} strokeWidth="0.4" vectorEffect="non-scaling-stroke" />
+              <line x1="0" y1="20" x2="20" y2="20" stroke={DAY_GRID} strokeWidth="0.4" vectorEffect="non-scaling-stroke" />
+            </pattern>
+          </defs>
+          <rect x="0" y="0" width="100" height="100" fill={`url(#${patId})`} />
+        </svg>
+      </div>
+      <div style={{ position: "absolute", top: PAD, left: PAD, right: PAD, bottom: PAD }}>
+        <svg
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          style={{ width: "100%", height: "100%", display: "block", overflow: "visible" }}
+        >
+          <line x1={0} y1={100} x2={h1x} y2={h1y} stroke={DAY_GUIDE} strokeWidth={1} strokeDasharray="2 2" vectorEffect="non-scaling-stroke" />
+          <line x1={100} y1={0} x2={h2x} y2={h2y} stroke={DAY_GUIDE} strokeWidth={1} strokeDasharray="2 2" vectorEffect="non-scaling-stroke" />
+          <path d={pathD} stroke="#fff" strokeWidth={3} strokeLinecap="round" fill="none" vectorEffect="non-scaling-stroke" />
+        </svg>
+      </div>
+      {[
+        { left: (h1x / 100) * inner, top: (h1y / 100) * inner },
+        { left: (h2x / 100) * inner, top: (h2y / 100) * inner },
+      ].map((k, i) => (
+        <div
+          key={i}
+          className="absolute"
+          style={{
+            width: KNOB,
+            height: KNOB,
+            left: k.left,
+            top: k.top,
+            background: "#fff",
+            clipPath: snapKnobClip,
+            imageRendering: "pixelated",
+          }}
+        />
+      ))}
+    </div>
+  )
 }
 
 // ---------- FOLIAGE (preview helpers — data/Clump/scatter live in ./foliage) ----------

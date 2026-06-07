@@ -1,86 +1,86 @@
-'use client';
+"use client"
 
-import { useEffect, useRef, useState, type PointerEvent } from 'react';
-import { bezierHandles } from '@/lib/bezierPath';
-import { STAIRCASE_CLIP, JIGSAW_CLIP } from './clipPaths';
-import { BOARD_BG, BOARD_FRAME } from './graphTheme';
-import { BoardGrid } from './BoardGrid';
+import { useEffect, useRef, useState, type PointerEvent } from "react"
+import { bezierHandles } from "@/lib/bezierPath"
+import { clamp01 } from "@/lib/math"
+import { STAIRCASE_CLIP, JIGSAW_CLIP } from "../lib/clipPaths"
+import { BOARD_BG, BOARD_FRAME } from "../lib/graphTheme"
+import { BoardGrid } from "./BoardGrid"
 
-export type ControlPoints = [number, number, number, number];
+export type ControlPoints = [number, number, number, number]
 
 type Props = {
-  value: ControlPoints;
-  onChange: (next: ControlPoints) => void;
-};
-
-const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
+  value: ControlPoints
+  onChange: (next: ControlPoints) => void
+}
 
 // same asphalt board as the CurveGraph (shared graphTheme tokens + BoardGrid)
-const BG = BOARD_BG;
-const FRAME = BOARD_FRAME;
-const GUIDE = 'rgba(255,255,255,0.35)';
-const KNOB = 14;
-const PAD = KNOB / 2;
+const BG = BOARD_BG
+const FRAME = BOARD_FRAME
+const GUIDE = "rgba(255,255,255,0.35)"
+const KNOB = 14
+const PAD = KNOB / 2
 
-const shellClip = STAIRCASE_CLIP;
-const knobClip = JIGSAW_CLIP;
+const shellClip = STAIRCASE_CLIP
+const knobClip = JIGSAW_CLIP
 
 export function BezierCurveEditor({ value, onChange }: Props) {
-  const [p1x, p1y, p2x, p2y] = value;
-  const innerRef = useRef<HTMLDivElement>(null);
-  const [innerSize, setInnerSize] = useState(0);
-  const [active, setActive] = useState<1 | 2 | null>(null);
+  const [p1x, p1y, p2x, p2y] = value
+  const innerRef = useRef<HTMLDivElement>(null)
+  const [innerSize, setInnerSize] = useState(0)
+  const [active, setActive] = useState<1 | 2 | null>(null)
 
   useEffect(() => {
-    if (!innerRef.current) return;
-    const el = innerRef.current;
-    const update = () => setInnerSize(el.getBoundingClientRect().width);
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+    if (!innerRef.current) return
+    const el = innerRef.current
+    const update = () => setInnerSize(el.getBoundingClientRect().width)
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
-  const { h1x, h1y, h2x, h2y } = bezierHandles(value);
-  const pathD = `M 0 100 C ${h1x} ${h1y} ${h2x} ${h2y} 100 0`;
+  const { h1x, h1y, h2x, h2y } = bezierHandles(value)
+  const pathD = `M 0 100 C ${h1x} ${h1y} ${h2x} ${h2y} 100 0`
 
-  const onPointerDown = (handle: 1 | 2) => (e: PointerEvent<HTMLDivElement>) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
-    setActive(handle);
-  };
+  const onPointerDown =
+    (handle: 1 | 2) => (e: PointerEvent<HTMLDivElement>) => {
+      e.currentTarget.setPointerCapture(e.pointerId)
+      setActive(handle)
+    }
 
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
-    if (!active || !innerRef.current) return;
-    const rect = innerRef.current.getBoundingClientRect();
-    const bx = clamp01((e.clientX - rect.left) / rect.width);
-    const by = clamp01(1 - (e.clientY - rect.top) / rect.height);
-    if (active === 1) onChange([bx, by, p2x, p2y]);
-    else onChange([p1x, p1y, bx, by]);
-  };
+    if (!active || !innerRef.current) return
+    const rect = innerRef.current.getBoundingClientRect()
+    const bx = clamp01((e.clientX - rect.left) / rect.width)
+    const by = clamp01(1 - (e.clientY - rect.top) / rect.height)
+    if (active === 1) onChange([bx, by, p2x, p2y])
+    else onChange([p1x, p1y, bx, by])
+  }
 
   const onPointerUp = (e: PointerEvent<HTMLDivElement>) => {
-    e.currentTarget.releasePointerCapture(e.pointerId);
-    setActive(null);
-  };
+    e.currentTarget.releasePointerCapture(e.pointerId)
+    setActive(null)
+  }
 
   return (
     <div
       onPointerMove={onPointerMove}
       style={{
-        width: '100%',
-        aspectRatio: '1',
-        position: 'relative',
-        touchAction: 'none',
+        width: "100%",
+        aspectRatio: "1",
+        position: "relative",
+        touchAction: "none",
       }}
     >
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           inset: 0,
           background: BG,
           clipPath: shellClip,
           boxShadow: `inset 0 0 0 2px ${FRAME}`,
-          imageRendering: 'pixelated',
+          imageRendering: "pixelated",
         }}
       >
         <svg
@@ -89,7 +89,12 @@ export function BezierCurveEditor({ value, onChange }: Props) {
           viewBox="0 0 100 100"
           preserveAspectRatio="none"
           shapeRendering="crispEdges"
-          style={{ position: 'absolute', inset: 2, width: 'calc(100% - 4px)', height: 'calc(100% - 4px)' }}
+          style={{
+            position: "absolute",
+            inset: 2,
+            width: "calc(100% - 4px)",
+            height: "calc(100% - 4px)",
+          }}
         >
           <BoardGrid />
         </svg>
@@ -98,7 +103,7 @@ export function BezierCurveEditor({ value, onChange }: Props) {
       <div
         ref={innerRef}
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: PAD,
           left: PAD,
           right: PAD,
@@ -108,10 +113,33 @@ export function BezierCurveEditor({ value, onChange }: Props) {
         <svg
           viewBox="0 0 100 100"
           preserveAspectRatio="none"
-          style={{ width: '100%', height: '100%', display: 'block', overflow: 'visible' }}
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "block",
+            overflow: "visible",
+          }}
         >
-          <line x1={0} y1={100} x2={h1x} y2={h1y} stroke={GUIDE} strokeWidth={1} strokeDasharray="2 2" vectorEffect="non-scaling-stroke" />
-          <line x1={100} y1={0} x2={h2x} y2={h2y} stroke={GUIDE} strokeWidth={1} strokeDasharray="2 2" vectorEffect="non-scaling-stroke" />
+          <line
+            x1={0}
+            y1={100}
+            x2={h1x}
+            y2={h1y}
+            stroke={GUIDE}
+            strokeWidth={1}
+            strokeDasharray="2 2"
+            vectorEffect="non-scaling-stroke"
+          />
+          <line
+            x1={100}
+            y1={0}
+            x2={h2x}
+            y2={h2y}
+            stroke={GUIDE}
+            strokeWidth={1}
+            strokeDasharray="2 2"
+            vectorEffect="non-scaling-stroke"
+          />
 
           <path
             d={pathD}
@@ -141,7 +169,7 @@ export function BezierCurveEditor({ value, onChange }: Props) {
         </>
       )}
     </div>
-  );
+  )
 }
 
 function Knob({
@@ -150,10 +178,10 @@ function Knob({
   onPointerDown,
   onPointerUp,
 }: {
-  left: number;
-  top: number;
-  onPointerDown: (e: PointerEvent<HTMLDivElement>) => void;
-  onPointerUp: (e: PointerEvent<HTMLDivElement>) => void;
+  left: number
+  top: number
+  onPointerDown: (e: PointerEvent<HTMLDivElement>) => void
+  onPointerUp: (e: PointerEvent<HTMLDivElement>) => void
 }) {
   return (
     <div
@@ -166,10 +194,10 @@ function Knob({
         height: KNOB,
         left,
         top,
-        background: '#fff',
+        background: "#fff",
         clipPath: knobClip,
-        imageRendering: 'pixelated',
+        imageRendering: "pixelated",
       }}
     />
-  );
+  )
 }

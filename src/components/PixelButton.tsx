@@ -12,11 +12,11 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 }
 
 export function PixelButton({
-  // night-theme violet primary — vibrant + glow so it pops against the purple night, in-theme with
-  // the sky/mountains (was a day-bright green)
-  face = "#8b6df0",
-  hi = "#b9a3ff",
-  sh = "#5a3fbf",
+  // night-theme violet primary (shared tokens, globals.css @theme) — vibrant + glow so it pops against
+  // the purple night, in-theme with the sky/mountains. Used in the inline gradient where var() resolves.
+  face = "var(--color-violet)",
+  hi = "var(--color-violet-hi)",
+  sh = "var(--color-violet-sh)",
   textColor = "#ffffff",
   fontSize = 18,
   glow = false,

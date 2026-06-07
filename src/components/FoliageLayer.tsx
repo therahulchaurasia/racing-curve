@@ -1,7 +1,8 @@
 "use client"
 
-import { useLayoutEffect, useMemo, useRef, useState } from "react"
-import { Clump, scatterFoliage, type ClumpPart } from "./foliage"
+import { memo, useLayoutEffect, useMemo, useRef, useState } from "react"
+import { Clump } from "./Clump"
+import { scatterFoliage, type ClumpPart } from "@/lib/foliage"
 
 // Static seeded foliage scatter for the page background. Measures its own box ONCE on mount and
 // derives the grid from a target cell size, so density stays consistent across screen sizes and
@@ -21,7 +22,8 @@ type Props = {
   scaleMax?: number
 }
 
-export function FoliageLayer({ seed, cellSize = 150, fill = 0.75, jitter = 0.6, types, filter, scaleMin, scaleMax }: Props) {
+// memo: static scatter — without this it reconciles every clump/img on every rAF frame of a race
+export const FoliageLayer = memo(function FoliageLayer({ seed, cellSize = 150, fill = 0.75, jitter = 0.6, types, filter, scaleMin, scaleMax }: Props) {
   const ref = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
   // fresh layout every page load (per mount); stable within a session. Pass `seed` to pin it.
@@ -73,4 +75,4 @@ export function FoliageLayer({ seed, cellSize = 150, fill = 0.75, jitter = 0.6, 
       })}
     </div>
   )
-}
+})

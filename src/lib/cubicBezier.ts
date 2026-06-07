@@ -2,12 +2,12 @@
 // Returns f(t) → p where t ∈ [0,1] is normalized time and p ∈ [0,1] is eased progress.
 // Newton-Raphson with binary-search fallback — same approach as Webkit/Blink.
 
+import { clamp01 } from "./math";
+
 const NEWTON_ITERATIONS = 8;
 const NEWTON_MIN_SLOPE = 0.001;
 const SUBDIVISION_PRECISION = 1e-7;
 const SUBDIVISION_MAX_ITERATIONS = 12;
-
-const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
 export function cubicBezier(
   p1x: number,

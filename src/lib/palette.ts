@@ -1,9 +1,11 @@
 // Shared "exit / destructive" button color (crimson) — DELETE + CLOSE. Spread into PixelButton.
 // Single source so the red stays identical everywhere it means "remove / get out".
+// points at the shared CSS tokens (globals.css @theme); these feed PixelButton's inline gradient,
+// where var() resolves
 export const BUTTON_RED = {
-  face: "#c0392b",
-  hi: "#e05c4d",
-  sh: "#7e2218",
+  face: "var(--color-crimson)",
+  hi: "var(--color-crimson-hi)",
+  sh: "var(--color-crimson-sh)",
   textColor: "#ffffff",
 }
 

@@ -2,7 +2,7 @@
 
 import type { Lane } from "@/lib/types"
 import { bezierPathD } from "@/lib/bezierPath"
-import { BOARD_BG, BOARD_FRAME } from "./graphTheme"
+import { BOARD_BG, BOARD_FRAME } from "../lib/graphTheme"
 import { BoardGrid } from "./BoardGrid"
 
 type Props = {
@@ -30,7 +30,7 @@ const dotClip = `polygon(
 // is the shared BoardGrid; tick labels are graph-only (muted light so they're legible on the board)
 const FRAME = BOARD_FRAME
 const BG = BOARD_BG
-const TICK = "#cdc9d6"
+const TICK = "var(--color-curb-white)" // shared token; used as CSS `color` on the tick labels
 
 export function CurveGraph({ lanes, progress, currentT }: Props) {
   // plain rectangle now — the enclosing Panel supplies the stepped corners + billboard frame, so the
@@ -66,13 +66,20 @@ export function CurveGraph({ lanes, progress, currentT }: Props) {
             shapeRendering="geometricPrecision"
           />
         ))}
-
       </svg>
 
-      <TickLabel x={0} y={H} anchor="start" baseline="bottom">0</TickLabel>
-      <TickLabel x={W} y={0} anchor="end" baseline="top">100</TickLabel>
-      <TickLabel x={W} y={H} anchor="end" baseline="bottom">time</TickLabel>
-      <TickLabel x={0} y={0} anchor="start" baseline="top">progress</TickLabel>
+      <TickLabel x={0} y={H} anchor="start" baseline="bottom">
+        0
+      </TickLabel>
+      <TickLabel x={W} y={0} anchor="end" baseline="top">
+        100
+      </TickLabel>
+      <TickLabel x={W} y={H} anchor="end" baseline="bottom">
+        time
+      </TickLabel>
+      <TickLabel x={0} y={0} anchor="start" baseline="top">
+        progress
+      </TickLabel>
 
       {lanes.map((lane, i) => (
         <div
@@ -81,8 +88,12 @@ export function CurveGraph({ lanes, progress, currentT }: Props) {
           style={{
             width: DOT,
             height: DOT,
-            left: `calc(${currentT * 100}% - ${DOT / 2}px)`,
-            top: `calc(${(1 - (progress[i] ?? 0)) * 100}% - ${DOT / 2}px)`,
+            // board is a fixed W×H, so the dot's pixel position is just currentT·W / (1−progress)·H —
+            // moved via transform (compositor, no per-frame layout/paint), like the cars
+            left: 0,
+            top: 0,
+            transform: `translate(${currentT * W - DOT / 2}px, ${(1 - (progress[i] ?? 0)) * H - DOT / 2}px)`,
+            willChange: "transform",
             background: lane.color,
             clipPath: dotClip,
             imageRendering: "pixelated",

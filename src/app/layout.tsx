@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, VT323, Pixelify_Sans, Silkscreen } from "next/font/google";
+import { Geist_Mono, VT323, Silkscreen } from "next/font/google";
+import { PixelGround } from "@/components/PixelGround";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -16,11 +12,6 @@ const vt323 = VT323({
   variable: "--font-vt323",
   subsets: ["latin"],
   weight: "400",
-});
-
-const pixelifySans = Pixelify_Sans({
-  variable: "--font-pixelify",
-  subsets: ["latin"],
 });
 
 const silkscreen = Silkscreen({
@@ -42,12 +33,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${vt323.variable} ${pixelifySans.variable} ${silkscreen.variable} h-full antialiased`}
+      className={`${geistMono.variable} ${vt323.variable} ${silkscreen.variable} h-full antialiased`}
     >
       {/* inline night bg in the SSR'd HTML → first paint is dark even before the CSS chunk loads
           (kills the dirt-yellow reload flash; CSS in globals.css is the backup) */}
       <body className="min-h-full flex flex-col" style={{ background: "#0e0c30" }}>
-        {children}
+        {/* PixelGround = night-dirt world ground; wraps every route so each page doesn't repeat it.
+            The 404 (BSOD) is a fixed opaque overlay, so it simply covers this — unaffected. */}
+        <PixelGround>{children}</PixelGround>
       </body>
     </html>
   );

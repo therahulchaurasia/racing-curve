@@ -8,8 +8,27 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+/* Shared color tokens — single source for colors reused across components. Each generates a Tailwind
+   utility (bg-asphalt, text-curb-white, …) AND a CSS var (var(--color-asphalt)) usable in inline
+   styles / gradients / box-shadows. (Per-component one-off colors + SVG-attribute colors stay local.) */
+@theme {
+  --color-asphalt: #3a3942;      /* road + graph/editor board + logo fill */
+  --color-board-frame: #26252b;  /* inset frame on graph/editor */
+  --color-panel: #1c1c1c;        /* billboard Panel + cog hub */
+  --color-ink: #1a1a1a;          /* near-black: badge bg, popover frame, text-on-light */
+  --color-curb-white: #cdc9d6;   /* curb white, graph ticks, icon text, modal frame */
+  --color-curb-red: #9e3b3b;     /* curb red */
+  --color-muted: #8d8c92;        /* about secondary text (strikethrough + p.s.) */
+  --color-night: #0e0c30;        /* body bg + icon-button chip bg */
+  --color-violet: #8b6df0;       /* primary accent: button face, segmented active, links */
+  --color-violet-hi: #b9a3ff;
+  --color-violet-sh: #5a3fbf;
+  --color-crimson: #c0392b;      /* exit/destructive button face */
+  --color-crimson-hi: #e05c4d;
+  --color-crimson-sh: #7e2218;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,7 +42,7 @@
    night world) instead of the old dirt-yellow. Set on html + body so the very first paint is dark. */
 html,
 body {
-  background: #0e0c30;
+  background: var(--color-night);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }

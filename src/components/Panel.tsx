@@ -1,11 +1,11 @@
 import type { CSSProperties, ReactNode } from "react"
-import { STAIRCASE_CLIP } from "./clipPaths"
+import { STAIRCASE_CLIP } from "../lib/clipPaths"
 
 // The near-black "billboard" frame: a dark board with the app's staircase corners and a faint
 // top-lit bevel. Single source — used by the start-light panel (RaceLights) and the curve-graph
 // enclosure. Anything that should read as "mounted hardware" gets wrapped in this.
-export const PANEL_BG = "#1c1c1c"
-export const PANEL_BEVEL = "inset 0 0 0 2px #000, inset 0 1px 0 #333"
+export const PANEL_BG = "var(--color-panel)" // shared token (globals.css @theme)
+export const PANEL_BEVEL = "inset 0 0 0 2px #000, inset 0 1px 0 #333" // one-off shadow — stays literal
 
 export function Panel({
   children,

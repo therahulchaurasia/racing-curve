@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react"
-import { NOTCH_CLIP, notchInnerClip } from "./clipPaths"
+import { NOTCH_CLIP, notchInnerClip } from "../lib/clipPaths"
 
 // "RACING / CURVES" wordmark: a thick-bordered box with a 2-step notch on the top-right corner.
 //
@@ -39,7 +39,13 @@ export function RacingCurvesLogo({
   font = "var(--font-vt323)",
 }: Props) {
   return (
-    <div style={{ display: "inline-block", background: border, clipPath: NOTCH_CLIP }}>
+    <div
+      style={{
+        display: "inline-block",
+        background: border,
+        clipPath: NOTCH_CLIP,
+      }}
+    >
       <div
         style={{
           background: fill,

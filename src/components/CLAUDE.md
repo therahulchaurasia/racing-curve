@@ -52,8 +52,8 @@ THE button. Single source. Props: `face`, `hi`, `sh` (gradient colors), `textCol
 ### `PixelGround.tsx`
 Dirt-yellow world background + a subtle speck overlay (radial-gradient dots). Outer `overflow-hidden`; children render on top. Foliage is NOT here — it lives in two zones in `BezierPlayground` (see below) so it can be bounded to the dirt above/below the road and never lands on the curbs.
 
-### `foliage.tsx`
-Single source of truth for the plant scatter — shared by the `/process` tuning lab and the page background. Hook-free/presentational. Exports: `PLANTS` (3 sprite paths), `ClumpPart`, `CLUMPS` (the curated combos), `FOLIAGE` (= `CLUMPS`; the placeable set — bare single sprites were dropped), `Clump` (renders a clump's parts bottom-baselined), `mulberry32` (seeded PRNG), and `scatterFoliage({cols,rows,fill,jitter,seed})` → seeded jittered-grid items in % coords (front-sorted by y). Don't duplicate this data/logic elsewhere — import from here.
+### Foliage (`lib/foliage.ts` + `Clump.tsx`)
+Plant-scatter data/logic lives in **`@/lib/foliage`** (no JSX): `PLANTS` (3 sprite paths), `ClumpPart`, `CLUMPS` (curated combos), `FOLIAGE` (= `CLUMPS`), `BUSHES` (bush-only night scrub), `FoliageItem`, and `scatterFoliage({cols,rows,fill,jitter,seed})` → seeded jittered-grid items in % coords (front-sorted by y). The renderer **`Clump.tsx`** (the one component) draws a clump's parts bottom-baselined. The seeded PRNG `mulberry32` lives in **`@/lib/random`** (shared by foliage + Stars + Mountains). Don't duplicate this data/logic — import from these.
 
 ### `FoliageLayer.tsx`
 Static seeded foliage scatter, used as a background layer inside a `relative` parent. Measures its own box ONCE on mount (`useLayoutEffect`) and derives `cols/rows` from a target `cellSize`, so density adapts to the parent's size. Positions are `%`, so a later resize only scales them — no re-measure, no relayout/pop. Seed is random per mount by default (fresh layout each page load, stable within a session); pass a `seed` prop to pin it (e.g. the `/process` lab). `absolute inset-0 z-0 pointer-events-none`; transparent (sits over PixelGround's dirt+specks). `BezierPlayground` renders **two** of these — a top zone (behind lights+graph) and a bottom zone (behind controls), each `flex-1` and flanking the road, with different seeds — so foliage fills the dirt above/below but the road stays clear (no center-mask needed). Defaults match the `/process` look (fill 75%, jitter 0.6).
@@ -127,9 +127,15 @@ calc(100% - 2px) 4px, 100% 4px,
 Small per-lane circular badge that previews the lane's curve. Shown at the left edge of each lane chassis; hovering opens the bezier editor popover.
 
 ### `ProcessPreviews.tsx`
-Contents of the `/process` route (formerly `/styles`). Sections (in render order): Buttons, Start prompt, Curve graph, Bezier curve editor, Lane popover curb frame, Cars, Pixel (legacy CSS-block car). This is the playground for iterating visuals before porting them to the real components. Most internals are local helpers (`PromptCell`, `CurbFrameCell`, `CarCell`, `PixelLane`).
+Contents of the `/process` route (formerly `/styles`). The playground for iterating visuals before porting them to the real components. Sections are grouped under top-level `GroupHeading`s:
+- **Environment** — mountain ridges, stars, foliage (variations + spread).
+- **Cars & Lanes** — cars (native + pixel), and the lane/road/ground versions (flat, lay-down, skew, ground-feel, finish line, merged road).
+- **Misc** — buttons, curve graph, bezier editor, settings cog+modal, logo, start prompt.
+- **Unsorted — to arrange** — the two start-lights sections (colors + gantry), parked here until they get a home.
 
-The lane-popover curb frame preview was used to compare red vs white vs black; black won for the actual implementation. The curb-frame helper here is a *preview-only* helper — the real popover styling lives inline in `Lane.tsx`. If we ever add more shells with the same frame, extract once and reuse.
+Most internals are local helpers (`PromptCell`, `CarCell`, `PixelLane`, plus `Section`/`GroupHeading`). (Per-section descriptive `Note`s were removed — previews are self-explanatory.)
+
+The curve-graph + bezier-editor sections are **before → after** exhibits: the "before" is a FROZEN day-styled snapshot (`OldGraphSnapshot` / `OldEditorSnapshot`, recreated from git history — static, non-interactive, won't track the real components), an `Arrow`, then the real current component as "after". If the live editor/graph design changes, these snapshots stay as the historical "before" — that's intentional; don't try to keep them in sync.
 
 ## Useful libraries this codebase relies on
 

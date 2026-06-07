@@ -6,7 +6,7 @@ A web app that visualizes easing curves by racing color-coded cars down a multi-
 - Next.js 16 App Router, React 19, TypeScript, Tailwind v4
 - SVG for graph + bezier paths; pixel-art HTML/CSS for road, cars, UI
 - Sprites: Kenney.nl CC0 pixel cars at `public/assets/cars/`, plants at `public/assets/environment/`
-- Fonts: Silkscreen for UI text (pixel arcade vibe). VT323 + Pixelify_Sans wired but unused — see `src/app/layout.tsx`
+- Fonts (3, all used): Silkscreen for UI text (pixel arcade vibe); VT323 for the RacingCurves logo; Geist Mono for readable prose (BSOD 404 + About modal) + the `font-mono` class. Body default falls back to a system sans (Arial / Tailwind's stack). See `src/app/layout.tsx`
 - No canvas. One `requestAnimationFrame` clock drives all lanes
 
 ## Core model

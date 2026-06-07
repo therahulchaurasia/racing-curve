@@ -13,10 +13,12 @@ const TWITTER_URL = "https://x.com/rahul_twtss"
 // TODO(copy): real website URL/label
 const WEBSITE_LABEL = "rahuldoes.dev"
 const WEBSITE_URL = "https://rahuldoes.dev"
+const GITHUB_LABEL = "github"
+const GITHUB_URL = "https://github.com/therahulchaurasia/racing-curve"
 
 // shared muted gray for the de-emphasized bits (struck-through "easing" + the p.s. footnote) so they
-// read as one "lighter" voice instead of two mismatched grays (this is the p.s. gray we liked)
-const MUTED = "#8d8c92"
+// read as one "lighter" voice — the shared token (globals.css @theme)
+const MUTED = "var(--color-muted)"
 
 // heading wordplay: "easing" struck through (dashed) → it's not easing curves, it's RACING curves
 const AboutHeading = (
@@ -92,7 +94,7 @@ export function AboutDialog({
             href={TWITTER_URL}
             target="_blank"
             rel="noreferrer"
-            style={{ color: "#8b6df0", textDecoration: "underline" }}
+            style={{ color: "var(--color-violet)", textDecoration: "underline" }}
           >
             {TWITTER_HANDLE}
           </a>{" "}
@@ -101,16 +103,25 @@ export function AboutDialog({
             href={WEBSITE_URL}
             target="_blank"
             rel="noreferrer"
-            style={{ color: "#8b6df0", textDecoration: "underline" }}
+            style={{ color: "var(--color-violet)", textDecoration: "underline" }}
           >
             {WEBSITE_LABEL}
+          </a>
+          {" · "}
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: "var(--color-violet)", textDecoration: "underline" }}
+          >
+            {GITHUB_LABEL}
           </a>
         </p>
         <p>
           you can check out the{" "}
           <Link
             href="/process"
-            style={{ color: "#8b6df0", textDecoration: "underline" }}
+            style={{ color: "var(--color-violet)", textDecoration: "underline" }}
           >
             process
           </Link>{" "}

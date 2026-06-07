@@ -20,15 +20,13 @@ export function IconButton({
       type="button"
       onClick={onClick}
       aria-label={ariaLabel}
-      className="text-[#cdc9d6] hover:text-white transition-colors active:translate-y-[1px]"
+      className="text-curb-white hover:text-white transition-colors active:translate-y-[1px] bg-night/45 border-[3px] border-curb-white/50"
       style={{
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
         padding: 6,
         cursor: "pointer",
-        background: "rgba(14,12,40,0.45)",
-        border: "3px solid rgba(205,201,214,0.5)",
       }}
     >
       {children}
