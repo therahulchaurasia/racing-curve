@@ -6,15 +6,7 @@
 
 import Link from "next/link"
 import { Modal } from "./Modal"
-
-// TODO(copy): final ideology text + the real handle/URL
-const TWITTER_HANDLE = "@rahul_twtss"
-const TWITTER_URL = "https://x.com/rahul_twtss"
-// TODO(copy): real website URL/label
-const WEBSITE_LABEL = "rahuldoes.dev"
-const WEBSITE_URL = "https://rahuldoes.dev"
-const GITHUB_LABEL = "github"
-const GITHUB_URL = "https://github.com/therahulchaurasia/racing-curve"
+import { LINKS } from "@/lib/site"
 
 // shared muted gray for the de-emphasized bits (struck-through "easing" + the p.s. footnote) so they
 // read as one "lighter" voice — the shared token (globals.css @theme)
@@ -68,10 +60,10 @@ export function AboutDialog({
           without really getting it.
         </p>
         <p>
-          Then I started Josh Comeau&apos;s whimsical animation course and hit
-          the part about easing curves. I loved it. But I wanted to interpret
-          them in my own way. And I thought, what&apos;s better than racing
-          cars?
+          Then I started Josh Comeau&apos;s{" "}
+          <AltLink href={LINKS.course.url}>{LINKS.course.label}</AltLink> and hit the
+          part about easing curves. I loved it. But I wanted to interpret them
+          in my own way. And I thought, what&apos;s better than racing cars?
         </p>
         <p>So I built this.</p>
         <p>
@@ -89,43 +81,14 @@ export function AboutDialog({
           }}
         />
         <p style={{ marginTop: 4 }}>
-          built by{" "}
-          <a
-            href={TWITTER_URL}
-            target="_blank"
-            rel="noreferrer"
-            style={{ color: "var(--color-violet)", textDecoration: "underline" }}
-          >
-            {TWITTER_HANDLE}
-          </a>{" "}
+          built by <AltLink href={LINKS.twitter.url}>{LINKS.twitter.label}</AltLink>
           {" · "}
-          <a
-            href={WEBSITE_URL}
-            target="_blank"
-            rel="noreferrer"
-            style={{ color: "var(--color-violet)", textDecoration: "underline" }}
-          >
-            {WEBSITE_LABEL}
-          </a>
+          <AltLink href={LINKS.website.url}>{LINKS.website.label}</AltLink>
           {" · "}
-          <a
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noreferrer"
-            style={{ color: "var(--color-violet)", textDecoration: "underline" }}
-          >
-            {GITHUB_LABEL}
-          </a>
+          <AltLink href={LINKS.github.url}>{LINKS.github.label}</AltLink>
         </p>
         <p>
-          you can check out the{" "}
-          <Link
-            href="/process"
-            style={{ color: "var(--color-violet)", textDecoration: "underline" }}
-          >
-            process
-          </Link>{" "}
-          here.
+          you can check out the <AltLink href="/process">process</AltLink> here.
         </p>
         {/* easter-egg breadcrumb: "wrong turn" echoes the BSOD 404 copy — pays off once they find it */}
         <p style={{ marginTop: 4, color: MUTED }}>
@@ -134,5 +97,23 @@ export function AboutDialog({
         </p>
       </div>
     </Modal>
+  )
+}
+
+// styled link — violet underline, in one place so the markup/style isn't repeated per link. Internal
+// hrefs ("/...") use next/link; everything else opens in a new tab.
+function AltLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const style = {
+    color: "var(--color-violet)",
+    textDecoration: "underline",
+  } as const
+  return href.startsWith("/") ? (
+    <Link href={href} style={style}>
+      {children}
+    </Link>
+  ) : (
+    <a href={href} target="_blank" rel="noreferrer" style={style}>
+      {children}
+    </a>
   )
 }
