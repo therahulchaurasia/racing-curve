@@ -7,7 +7,7 @@
 // Used by SettingsDialog and AboutDialog — pass a `title` + the body as children.
 
 import * as Dialog from "@radix-ui/react-dialog"
-import type { ReactNode } from "react"
+import { useRef, type ReactNode } from "react"
 import { STAIRCASE_CLIP, staircaseInnerClip } from "../lib/clipPaths"
 import { PANEL_BG } from "./Panel"
 import { RacingCurvesLogo } from "./RacingCurvesLogo"
@@ -28,6 +28,7 @@ export function Modal({
   children: ReactNode
   logo?: boolean // wordmark header above the panel; off when the title itself is the headline
 }) {
+  const overlayRef = useRef<HTMLDivElement>(null)
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -36,6 +37,7 @@ export function Modal({
             at the viewport edge (reads as the page scrollbar), no inner dialog scrollbar. The vignette
             uses background-attachment:fixed so it stays anchored to the viewport while scrolling. */}
         <Dialog.Overlay
+          ref={overlayRef}
           style={{
             position: "fixed",
             inset: 0,
@@ -55,6 +57,12 @@ export function Modal({
             aria-describedby={undefined}
             className="flex flex-col items-center"
             style={{ position: "relative", zIndex: 61 }}
+            onPointerDownOutside={(e) => {
+              // the overlay is the scroll container, so its scrollbar lives "outside" the Content —
+              // clicking it would otherwise close the dialog. Ignore clicks past the content width.
+              const el = overlayRef.current
+              if (el && e.detail.originalEvent.clientX > el.clientWidth) e.preventDefault()
+            }}
           >
             {/* DOOM-style header: the wordmark sits ABOVE the panel (asphalt fill, white border + text
               so it reads on the dark overlay), with a clear gap to the panel below. Omitted when the
