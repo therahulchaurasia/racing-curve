@@ -10,6 +10,7 @@ import { CurvePresets } from "./CurvePresets"
 import { PixelButton } from "./PixelButton"
 import { STAIRCASE_CLIP } from "./clipPaths"
 import { labelForCurve } from "@/lib/presets"
+import { BUTTON_RED } from "@/lib/palette"
 
 type Props = {
   lane: LaneType
@@ -335,10 +336,7 @@ export function Lane({
             <PixelButton
               onClick={onRemove}
               aria-label="Remove lane"
-              face="#8e8e98"
-              hi="#aaaab4"
-              sh="#54545e"
-              textColor="#14141a"
+              {...BUTTON_RED}
               fontSize={14}
               className="absolute top-0 left-0 flex items-center justify-center"
               style={{
