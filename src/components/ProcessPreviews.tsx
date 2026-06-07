@@ -12,6 +12,8 @@ import { RaceLights, StartGantry, useStartLightSequence } from "./RaceLights"
 import { RacingCurvesLogo } from "./RacingCurvesLogo"
 import { SettingsCog } from "./SettingsCog"
 import { SettingsDialog, SettingRow, SettingSegmented } from "./SettingsDialog"
+import { HelpButton } from "./HelpButton"
+import { AboutDialog } from "./AboutDialog"
 import type { LightsStyle } from "@/lib/settings"
 import { Mountains, FRONT_RIDGE, BACK_RIDGE } from "./Mountains"
 import { NightSky } from "./NightSky"
@@ -114,6 +116,7 @@ export function ProcessPreviews() {
   const [demoShowGraph, setDemoShowGraph] = useState(true)
   const [demoShowLights, setDemoShowLights] = useState(true)
   const [demoLightsStyle, setDemoLightsStyle] = useState<LightsStyle>("sequence")
+  const [demoAboutOpen, setDemoAboutOpen] = useState(false)
   const lights = useStartLightSequence()
   const roadItems = Array.from(
     { length: roadN },
@@ -128,11 +131,16 @@ export function ProcessPreviews() {
       <Section title="Settings — cog + modal">
         <div className="flex items-center gap-8 p-6" style={{ background: "#181445" }}>
           <div className="flex flex-col items-center gap-2">
-            <SettingsCog onClick={() => setSettingsOpen(true)} />
-            <span className="text-[10px] text-[#7a6fb0] font-mono">click / ESC</span>
+            <div className="flex gap-2">
+              <HelpButton onClick={() => setDemoAboutOpen(true)} />
+              <SettingsCog onClick={() => setSettingsOpen(true)} />
+            </div>
+            <span className="text-[10px] text-[#7a6fb0] font-mono">? = about · cog = settings</span>
           </div>
           <PixelButton onClick={() => setSettingsOpen(true)}>OPEN SETTINGS</PixelButton>
+          <PixelButton onClick={() => setDemoAboutOpen(true)}>OPEN ABOUT</PixelButton>
         </div>
+        <AboutDialog open={demoAboutOpen} onOpenChange={setDemoAboutOpen} />
         <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen}>
           <SettingRow label="CURVE GRAPH">
             <SettingSegmented

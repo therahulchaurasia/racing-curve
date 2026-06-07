@@ -50,3 +50,16 @@ export function writeSettingsCookie(s: Settings): void {
   const value = encodeURIComponent(serializeSettings(s))
   document.cookie = `${SETTINGS_COOKIE}=${value}; path=/; max-age=31536000; SameSite=Lax`
 }
+
+// Separate flag cookie: has the visitor seen the intro/about modal? The about modal auto-shows once
+// on first visit (when this is false) and is reopenable via the help button; closing it sets this.
+export const INTRO_COOKIE = "racing-curve-intro-seen"
+
+export function parseIntroSeen(raw?: string): boolean {
+  return raw === "1"
+}
+
+export function writeIntroSeenCookie(): void {
+  if (typeof document === "undefined") return
+  document.cookie = `${INTRO_COOKIE}=1; path=/; max-age=31536000; SameSite=Lax`
+}

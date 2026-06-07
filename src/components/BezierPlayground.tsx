@@ -9,6 +9,8 @@ import { StartGantry, useStartLightSequence } from "./RaceLights"
 import { Panel } from "./Panel"
 import { SettingsCog } from "./SettingsCog"
 import { SettingsDialog, SettingRow, SettingSegmented } from "./SettingsDialog"
+import { HelpButton } from "./HelpButton"
+import { AboutDialog } from "./AboutDialog"
 import { StarField } from "./Stars"
 import { Mountains } from "./Mountains"
 import { NightSky } from "./NightSky"
@@ -18,7 +20,7 @@ import { cubicBezier } from "@/lib/cubicBezier"
 import { labelForCurve } from "@/lib/presets"
 import { LANE_PALETTE as PALETTE } from "@/lib/palette"
 import type { Lane as LaneType } from "@/lib/types"
-import { type Settings, writeSettingsCookie } from "@/lib/settings"
+import { type Settings, writeSettingsCookie, writeIntroSeenCookie } from "@/lib/settings"
 
 const DURATION_MS = 3000
 const MAX_LANES = 6 // capped so the side-view stays scenic (no endless stacking)
@@ -43,7 +45,13 @@ type PlayState = {
   solvers: Array<(t: number) => number>
 }
 
-export function BezierPlayground({ initialSettings }: { initialSettings: Settings }) {
+export function BezierPlayground({
+  initialSettings,
+  introSeen,
+}: {
+  initialSettings: Settings
+  introSeen: boolean
+}) {
   const [lanes, setLanes] = useState<LaneType[]>(INITIAL_LANES)
   const [progress, setProgress] = useState<number[]>(() =>
     INITIAL_LANES.map(() => 0),
@@ -55,10 +63,18 @@ export function BezierPlayground({ initialSettings }: { initialSettings: Setting
   const [showLights, setShowLights] = useState(initialSettings.showLights)
   const [lightsStyle, setLightsStyle] = useState(initialSettings.lightsStyle)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  // about/ideology modal — auto-opens once on first visit (cookie not yet set), reopen via "?"
+  const [aboutOpen, setAboutOpen] = useState(!introSeen)
 
   useEffect(() => {
     writeSettingsCookie({ showGraph, showLights, lightsStyle })
   }, [showGraph, showLights, lightsStyle])
+
+  // closing the about modal marks the intro as seen so it won't auto-open again
+  const onAboutOpenChange = (open: boolean) => {
+    setAboutOpen(open)
+    if (!open) writeIntroSeenCookie()
+  }
 
   const isPlaying = play !== null
 
@@ -101,14 +117,8 @@ export function BezierPlayground({ initialSettings }: { initialSettings: Setting
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // ESC opens settings when closed; radix handles close-on-ESC while it's open (guarded here so
-      // the two don't fight — when open this branch is a no-op).
-      if (e.code === "Escape") {
-        if (!settingsOpen) setSettingsOpen(true)
-        return
-      }
       if (e.code !== "Space") return
-      if (settingsOpen) return // modal open — don't start a race behind it
+      if (settingsOpen || aboutOpen) return // a modal is open — don't start a race behind it
       const target = e.target as HTMLElement | null
       if (
         target &&
@@ -136,7 +146,7 @@ export function BezierPlayground({ initialSettings }: { initialSettings: Setting
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [lanes, lights.start, lights.startSimple, lightsStyle, settingsOpen])
+  }, [lanes, lights.start, lights.startSimple, lightsStyle, settingsOpen, aboutOpen])
 
   const updateLane = (next: LaneType) => {
     setLanes((prev) => prev.map((l) => (l.id === next.id ? next : l)))
@@ -288,10 +298,12 @@ export function BezierPlayground({ initialSettings }: { initialSettings: Setting
 
       {!isPlaying && !lights.running && <PressSpace />}
 
-      {/* settings — cog fixed top-right (click) + ESC both open the modal */}
-      <div className="fixed top-4 right-4 z-50">
+      {/* top-right controls: "?" about + settings cog. Click to open; ESC closes whichever is open. */}
+      <div className="fixed top-4 right-4 z-50 flex gap-2">
+        <HelpButton onClick={() => setAboutOpen(true)} />
         <SettingsCog onClick={() => setSettingsOpen(true)} />
       </div>
+      <AboutDialog open={aboutOpen} onOpenChange={onAboutOpenChange} />
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen}>
         <SettingRow label="CURVE GRAPH">
           <SettingSegmented

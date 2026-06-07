@@ -3,10 +3,10 @@
 // Pixel settings cog graphic built from two plus/cross shapes — one axis-aligned, one rotated 45° —
 // so the eight arms read as gear teeth. A center hole is punched out with an SVG mask (truly
 // transparent, so whatever's behind shows through the hub). Graphic only (fill = currentColor, so it
-// inherits the button's text color). The cog is a self-contained icon button with a simple border
-// (nearly the cog's own color) — no heavy stepped button shape.
+// inherits the button's text color). Wrapped in the shared IconButton chip (same as the help "?").
 
 import { useId } from "react"
+import { IconButton } from "./IconButton"
 
 const VB = 24 // viewBox units
 const C = VB / 2 // centre
@@ -34,19 +34,7 @@ export function SettingsCog({
 }) {
   const maskId = useId()
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label="Open settings"
-      className="group text-[#cdc9d6] hover:text-white transition-colors active:translate-y-[1px]"
-      style={{
-        display: "inline-flex",
-        padding: 6,
-        cursor: "pointer",
-        background: "rgba(14,12,40,0.45)",
-        border: "3px solid rgba(205,201,214,0.5)",
-      }}
-    >
+    <IconButton onClick={onClick} ariaLabel="Open settings">
       <svg
         width={size}
         height={size}
@@ -66,6 +54,6 @@ export function SettingsCog({
           </g>
         </g>
       </svg>
-    </button>
+    </IconButton>
   )
 }
