@@ -17,7 +17,7 @@ A web app that visualizes easing curves by racing color-coded cars down a multi-
 
 ## Routes
 - `/` — main app (`BezierPlayground`)
-- `/styles` — design playground; iterate visuals here, port to real components once locked
+- `/process` — design playground; iterate visuals here, port to real components once locked. Kept public so visitors can see the process + play with the star generator etc.
 
 ## Workflow rules (Rahul)
 These are load-bearing — see `~/.claude/projects/.../memory/` for the full memory entries.
