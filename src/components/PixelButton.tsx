@@ -8,14 +8,18 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   sh?: string
   textColor?: string
   fontSize?: number
+  glow?: boolean // soft halo (drop-shadow follows the clip silhouette; box-shadow would be clipped)
 }
 
 export function PixelButton({
-  face = "#3bb43b",
-  hi = "#7fe26b",
-  sh = "#1e7a1e",
-  textColor = "#fff",
+  // night-theme violet primary — vibrant + glow so it pops against the purple night, in-theme with
+  // the sky/mountains (was a day-bright green)
+  face = "#8b6df0",
+  hi = "#b9a3ff",
+  sh = "#5a3fbf",
+  textColor = "#ffffff",
   fontSize = 18,
+  glow = false,
   className = "",
   style,
   children,
@@ -41,6 +45,7 @@ export function PixelButton({
         clipPath: clip,
         textShadow: `1px 1px 0 ${sh}`,
         imageRendering: "pixelated",
+        filter: glow ? `drop-shadow(0 0 6px ${hi})` : undefined,
         ...style,
       }}
     >

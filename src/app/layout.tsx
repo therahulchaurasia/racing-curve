@@ -44,7 +44,11 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${vt323.variable} ${pixelifySans.variable} ${silkscreen.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      {/* inline night bg in the SSR'd HTML → first paint is dark even before the CSS chunk loads
+          (kills the dirt-yellow reload flash; CSS in globals.css is the backup) */}
+      <body className="min-h-full flex flex-col" style={{ background: "#0e0c30" }}>
+        {children}
+      </body>
     </html>
   );
 }

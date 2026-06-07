@@ -19,8 +19,11 @@
   }
 }
 
+/* Night base — paints before React mounts, so a reload flash shows the dark sky color (matching the
+   night world) instead of the old dirt-yellow. Set on html + body so the very first paint is dark. */
+html,
 body {
-  background: #e8c547;
+  background: #0e0c30;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
