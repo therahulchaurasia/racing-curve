@@ -5,11 +5,13 @@ This is the implementation map for `src/components/`. Root `CLAUDE.md` covers pr
 ## Design tokens
 
 ```
-Dirt yellow (world bg)      #e8c547   PixelGround
-Asphalt gray (road, cards)  #5e5e5e   Lane interior, CurveGraph, BezierCurveEditor bg
-Curb red                    #d44      Lane curbs (top/bottom); also a popover-frame option
-Curb white                  #f5f5f5   Lane curbs (top/bottom)
-Frame dark                  #2a2a2a   Inset 2px boxShadow on CurveGraph + BezierCurveEditor shells
+Dirt yellow (world bg)      #e8c547   PixelGround — LEGACY day token (world is night now)
+Asphalt night (road)        #3a3942   Lane interior (night skin)
+Board bg (graph + editor)   #3a3942   graphTheme.BOARD_BG — CurveGraph + BezierCurveEditor surface
+Curb red                    #9e3b3b   Lane curbs (night); day was #d44
+Curb white                  #cdc9d6   Lane curbs (night) + CurveGraph tick labels; day was #f5f5f5
+Board frame                 #26252b   graphTheme.BOARD_FRAME — inset 2px frame on graph + editor
+Panel billboard             #1c1c1c   Panel.tsx — near-black board behind start lights + curve graph
 Frame near-black            #1a1a1a   Popover wrapper around editor
 Text on light buttons       #1a1a1a
 Grid line (faint)           rgba(255,255,255,0.06)
@@ -48,7 +50,13 @@ THE button. Single source. Props: `face`, `hi`, `sh` (gradient colors), `textCol
 "PRESS SPACE TO START" text, fixed bottom-center of viewport, white silkscreen with 2px black text shadow. Blinks 800ms on / 800ms off via `setInterval`. Pointer-events disabled. Used by `BezierPlayground` instead of a PLAY button — appears when not racing, disappears during race.
 
 ### `PixelGround.tsx`
-Dirt-yellow world background. Outer `overflow-hidden` to prevent plant overflow + black-strip-at-bottom artifact. Contains randomly placed plant sprites (Plant1/2/3) and a subtle speck overlay. Children render on top.
+Dirt-yellow world background + a subtle speck overlay (radial-gradient dots). Outer `overflow-hidden`; children render on top. Foliage is NOT here — it lives in two zones in `BezierPlayground` (see below) so it can be bounded to the dirt above/below the road and never lands on the curbs.
+
+### `foliage.tsx`
+Single source of truth for the plant scatter — shared by the `/process` tuning lab and the page background. Hook-free/presentational. Exports: `PLANTS` (3 sprite paths), `ClumpPart`, `CLUMPS` (the curated combos), `FOLIAGE` (= `CLUMPS`; the placeable set — bare single sprites were dropped), `Clump` (renders a clump's parts bottom-baselined), `mulberry32` (seeded PRNG), and `scatterFoliage({cols,rows,fill,jitter,seed})` → seeded jittered-grid items in % coords (front-sorted by y). Don't duplicate this data/logic elsewhere — import from here.
+
+### `FoliageLayer.tsx`
+Static seeded foliage scatter, used as a background layer inside a `relative` parent. Measures its own box ONCE on mount (`useLayoutEffect`) and derives `cols/rows` from a target `cellSize`, so density adapts to the parent's size. Positions are `%`, so a later resize only scales them — no re-measure, no relayout/pop. Seed is random per mount by default (fresh layout each page load, stable within a session); pass a `seed` prop to pin it (e.g. the `/process` lab). `absolute inset-0 z-0 pointer-events-none`; transparent (sits over PixelGround's dirt+specks). `BezierPlayground` renders **two** of these — a top zone (behind lights+graph) and a bottom zone (behind controls), each `flex-1` and flanking the road, with different seeds — so foliage fills the dirt above/below but the road stays clear (no center-mask needed). Defaults match the `/process` look (fill 75%, jitter 0.6).
 
 ### `Lane.tsx`
 One lane row = chassis (curbs + asphalt + checkers + car sprite + curve badge) + 30px vertical DELETE button + hoisted popover (when open).
@@ -72,13 +80,16 @@ DELETE_BTN_WIDTH = 30
 ### `BezierPlayground.tsx`
 Top-level race orchestrator. Owns `lanes`, `progress`, `currentT`, `play` state. Single rAF loop in a `useEffect`. Listens for `Space` key globally (ignored when focus is in input/textarea) — calls `onPlay` if not currently racing; `onPlay` resets progress automatically, so it doubles as restart.
 
-Renders lanes + `+ LANE` button + `PressSpace` (when `!isPlaying`). PLAY + RESET buttons are commented out with a TODO note — handlers kept in case we bring them back. `CurveGraph` import exists but is commented out in render (graph not yet placed in main layout — pending design decision).
+Renders lanes + `+ LANE` button + `PressSpace` (when `!isPlaying`). PLAY + RESET buttons are commented out with a TODO note — handlers kept in case we bring them back. `CurveGraph` (wrapped in `Panel`) is placed bottom-right of the sky zone, base on the horizon line, gated by the `SHOW_GRAPH` flag (now `true`).
 
 ### `CurveGraph.tsx`
-Pixel-themed graph card. `W = 600`, `H = 160`, asphalt `#5e5e5e` bg, staircase clip-path corners, inset 2px frame. SVG `viewBox="0 0 100 100"` with `preserveAspectRatio="none"` + `shapeRendering="crispEdges"`. Faint grid every 10%, brighter midlines at 50%. Curves drawn at `strokeWidth=3`. Dots are 12×12 HTML divs with the jigsaw octagon clip-path, color per lane. Silkscreen tick labels (`0`, `t=1`, `p=1`). **No sweep line** — the dots already track "now".
+Night-skinned graph board. `W = 260`, `H = 150`. Board bg/frame/grid come from the shared `graphTheme.ts` (`BOARD_BG`/`BOARD_FRAME`/`BOARD_GRID` — same surface as `BezierCurveEditor`); tick labels are graph-only. **No staircase clip of its own** — it's a plain rectangle; the enclosing `Panel` supplies the stepped corners + billboard frame. SVG `viewBox="0 0 100 100"` with `preserveAspectRatio="none"` + `shapeRendering="crispEdges"`. Faint white grid every 10%, brighter midlines at 50%. Curves drawn at `strokeWidth=3`. Dots are 12×12 HTML divs with the jigsaw octagon clip-path, color per lane. Muted-light silkscreen labels (`#cdc9d6`): `0` at the curve start (bottom-left) and `100` at the curve end (top-right); `time` on the x-axis end, `progress` on the y-axis top. **No sweep line** — the dots already track "now". Always render it inside a `Panel`.
+
+### `Panel.tsx`
+Single source for the near-black "billboard" frame: dark board (`#1c1c1c`) with the app's staircase corners + a faint top-lit bevel. Used by `RaceLights` (start-light panel) and to enclose `CurveGraph`. `padding` prop (default 14). Anything that should read as "mounted hardware" wraps in this — don't re-inline the bg/bevel/clip.
 
 ### `BezierCurveEditor.tsx`
-Pixel-themed bezier editor. Square aspect ratio.
+Pixel-themed bezier editor. Square aspect ratio. Same night board surface as `CurveGraph` — bg/frame/grid come from the shared `graphTheme.ts` tokens (don't redefine them here). The selected preset row in `CurvePresets` also reuses `BOARD_BG`.
 
 Architecture (matters for math):
 - **Outer wrapper** (`aspect-ratio: 1`, `position: relative`): owns `onPointerMove`; reserves the layout slot.
@@ -88,7 +99,7 @@ Architecture (matters for math):
 
 Why HTML knobs instead of SVG `<rect>`: SVG rects in `viewBox 0..100` don't render the stepped clip-path crisply at small sizes, and dragging to the edge with `viewBox` math was a hack. Real measurements via `getBoundingClientRect()` on `innerRef` give exact bezier values.
 
-Grid: SVG `<pattern>` with `patternUnits="userSpaceOnUse"`, 20×20 viewBox units, `vectorEffect="non-scaling-stroke"`, `shapeRendering="crispEdges"`. Pattern handles sub-pixel distribution uniformly across cells — fixes the "one cell wider than others" rounding bug we hit when using HTML divs with pixel math.
+Grid: the shared `BoardGrid` (same "radar" grid as `CurveGraph`) — faint lines every 10% + brighter midlines at the 50% crosshair, `vectorEffect="non-scaling-stroke"`, drawn in a bg `<svg>` behind the play-area. (Was an even 20×20 `<pattern>`; swapped for `BoardGrid` so the editor matches the graph's command-center feel.)
 
 Curve path: simple `M 0 100 C h1x h1y h2x h2y 100 0`, `strokeWidth=3`, `strokeLinecap="round"`. No tangent extensions (we tried — looked like a stub).
 
@@ -103,8 +114,8 @@ calc(100% - 2px) 4px, 100% 4px,
 ### `CurveBadge.tsx`
 Small per-lane circular badge that previews the lane's curve. Shown at the left edge of each lane chassis; hovering opens the bezier editor popover.
 
-### `StylePreviews.tsx`
-Contents of `/styles` route. Sections (in render order): Buttons, Start prompt, Curve graph, Bezier curve editor, Lane popover curb frame, Cars, Pixel (legacy CSS-block car). This is the playground for iterating visuals before porting them to the real components. Most internals are local helpers (`PromptCell`, `CurbFrameCell`, `CarCell`, `PixelLane`).
+### `ProcessPreviews.tsx`
+Contents of the `/process` route (formerly `/styles`). Sections (in render order): Buttons, Start prompt, Curve graph, Bezier curve editor, Lane popover curb frame, Cars, Pixel (legacy CSS-block car). This is the playground for iterating visuals before porting them to the real components. Most internals are local helpers (`PromptCell`, `CurbFrameCell`, `CarCell`, `PixelLane`).
 
 The lane-popover curb frame preview was used to compare red vs white vs black; black won for the actual implementation. The curb-frame helper here is a *preview-only* helper — the real popover styling lives inline in `Lane.tsx`. If we ever add more shells with the same frame, extract once and reuse.
 

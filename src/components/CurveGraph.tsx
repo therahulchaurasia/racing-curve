@@ -2,6 +2,8 @@
 
 import type { Lane } from "@/lib/types"
 import { bezierPathD } from "@/lib/bezierPath"
+import { BOARD_BG, BOARD_FRAME } from "./graphTheme"
+import { BoardGrid } from "./BoardGrid"
 
 type Props = {
   lanes: Lane[]
@@ -9,8 +11,8 @@ type Props = {
   currentT: number
 }
 
-const W = 250
-const H = 250
+const W = 260 // with H=150 the corner-to-corner linear line sits at ~30° (atan(150/260))
+const H = 150
 const DOT = 12
 
 const dotClip = `polygon(
@@ -24,20 +26,15 @@ const dotClip = `polygon(
   2px calc(100% - 4px), 0 calc(100% - 4px),
   0 4px, 2px 4px, 2px 2px, 4px 2px
 )`
-const FRAME = "#2a2a2a"
-const GRID = "rgba(255,255,255,0.06)"
-const MID = "rgba(255,255,255,0.12)"
-const BG = "#5e5e5e"
-const TICK = "#1a1a1a"
-
-const clip = `polygon(
-  0 6px, 3px 6px, 3px 3px, 6px 3px, 6px 0,
-  calc(100% - 6px) 0, calc(100% - 6px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 6px, 100% 6px,
-  100% calc(100% - 6px), calc(100% - 3px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px), calc(100% - 6px) calc(100% - 3px), calc(100% - 6px) 100%,
-  6px 100%, 6px calc(100% - 3px), 3px calc(100% - 3px), 3px calc(100% - 6px), 0 calc(100% - 6px)
-)`
+// night skin — board bg/frame come from the shared graphTheme (same surface as the editor); the grid
+// is the shared BoardGrid; tick labels are graph-only (muted light so they're legible on the board)
+const FRAME = BOARD_FRAME
+const BG = BOARD_BG
+const TICK = "#cdc9d6"
 
 export function CurveGraph({ lanes, progress, currentT }: Props) {
+  // plain rectangle now — the enclosing Panel supplies the stepped corners + billboard frame, so the
+  // graph itself is a clean asphalt board (no staircase clip of its own)
   return (
     <div
       className="relative"
@@ -45,7 +42,6 @@ export function CurveGraph({ lanes, progress, currentT }: Props) {
         width: W,
         height: H,
         background: BG,
-        clipPath: clip,
         boxShadow: `inset 0 0 0 2px ${FRAME}`,
         imageRendering: "pixelated",
       }}
@@ -56,15 +52,7 @@ export function CurveGraph({ lanes, progress, currentT }: Props) {
         shapeRendering="crispEdges"
         style={{ width: "100%", height: "100%", display: "block" }}
       >
-        {[10, 20, 30, 40, 50, 60, 70, 80, 90].map((v) => (
-          <g key={v}>
-            <line x1={v} y1={0} x2={v} y2={100} stroke={GRID} strokeWidth={0.3} vectorEffect="non-scaling-stroke" />
-            <line x1={0} y1={v} x2={100} y2={v} stroke={GRID} strokeWidth={0.3} vectorEffect="non-scaling-stroke" />
-          </g>
-        ))}
-
-        <line x1={50} y1={0} x2={50} y2={100} stroke={MID} strokeWidth={0.6} vectorEffect="non-scaling-stroke" />
-        <line x1={0} y1={50} x2={100} y2={50} stroke={MID} strokeWidth={0.6} vectorEffect="non-scaling-stroke" />
+        <BoardGrid />
 
         {lanes.map((lane) => (
           <path
@@ -82,8 +70,9 @@ export function CurveGraph({ lanes, progress, currentT }: Props) {
       </svg>
 
       <TickLabel x={0} y={H} anchor="start" baseline="bottom">0</TickLabel>
-      <TickLabel x={W} y={H} anchor="end" baseline="bottom">t=1</TickLabel>
-      <TickLabel x={0} y={0} anchor="start" baseline="top">p=1</TickLabel>
+      <TickLabel x={W} y={0} anchor="end" baseline="top">100</TickLabel>
+      <TickLabel x={W} y={H} anchor="end" baseline="bottom">time</TickLabel>
+      <TickLabel x={0} y={0} anchor="start" baseline="top">progress</TickLabel>
 
       {lanes.map((lane, i) => (
         <div

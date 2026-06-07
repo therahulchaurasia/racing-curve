@@ -1,7 +1,10 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { bezierHandles } from '@/lib/bezierPath';
+import { STAIRCASE_CLIP, JIGSAW_CLIP } from './clipPaths';
+import { BOARD_BG, BOARD_FRAME } from './graphTheme';
+import { BoardGrid } from './BoardGrid';
 
 export type ControlPoints = [number, number, number, number];
 
@@ -12,37 +15,19 @@ type Props = {
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
-const BG = '#5e5e5e';
-const FRAME = '#2a2a2a';
-const GRID = 'rgba(255,255,255,0.06)';
-const MID = 'rgba(255,255,255,0.12)';
+// same asphalt board as the CurveGraph (shared graphTheme tokens + BoardGrid)
+const BG = BOARD_BG;
+const FRAME = BOARD_FRAME;
 const GUIDE = 'rgba(255,255,255,0.35)';
 const KNOB = 14;
 const PAD = KNOB / 2;
 
-const shellClip = `polygon(
-  0 6px, 3px 6px, 3px 3px, 6px 3px, 6px 0,
-  calc(100% - 6px) 0, calc(100% - 6px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 6px, 100% 6px,
-  100% calc(100% - 6px), calc(100% - 3px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px), calc(100% - 6px) calc(100% - 3px), calc(100% - 6px) 100%,
-  6px 100%, 6px calc(100% - 3px), 3px calc(100% - 3px), 3px calc(100% - 6px), 0 calc(100% - 6px)
-)`;
-
-const knobClip = `polygon(
-  4px 0, calc(100% - 4px) 0,
-  calc(100% - 4px) 2px, calc(100% - 2px) 2px,
-  calc(100% - 2px) 4px, 100% 4px,
-  100% calc(100% - 4px), calc(100% - 2px) calc(100% - 4px),
-  calc(100% - 2px) calc(100% - 2px), calc(100% - 4px) calc(100% - 2px),
-  calc(100% - 4px) 100%, 4px 100%,
-  4px calc(100% - 2px), 2px calc(100% - 2px),
-  2px calc(100% - 4px), 0 calc(100% - 4px),
-  0 4px, 2px 4px, 2px 2px, 4px 2px
-)`;
+const shellClip = STAIRCASE_CLIP;
+const knobClip = JIGSAW_CLIP;
 
 export function BezierCurveEditor({ value, onChange }: Props) {
   const [p1x, p1y, p2x, p2y] = value;
   const innerRef = useRef<HTMLDivElement>(null);
-  const patId = useId();
   const [innerSize, setInnerSize] = useState(0);
   const [active, setActive] = useState<1 | 2 | null>(null);
 
@@ -106,13 +91,7 @@ export function BezierCurveEditor({ value, onChange }: Props) {
           shapeRendering="crispEdges"
           style={{ position: 'absolute', inset: 2, width: 'calc(100% - 4px)', height: 'calc(100% - 4px)' }}
         >
-          <defs>
-            <pattern id={patId} x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-              <line x1="20" y1="0" x2="20" y2="20" stroke={GRID} strokeWidth="0.4" vectorEffect="non-scaling-stroke" />
-              <line x1="0" y1="20" x2="20" y2="20" stroke={GRID} strokeWidth="0.4" vectorEffect="non-scaling-stroke" />
-            </pattern>
-          </defs>
-          <rect x="0" y="0" width="100" height="100" fill={`url(#${patId})`} />
+          <BoardGrid />
         </svg>
       </div>
 
