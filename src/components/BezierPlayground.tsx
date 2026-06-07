@@ -7,6 +7,8 @@ import { PixelButton } from "./PixelButton"
 import { PressSpace } from "./PressSpace"
 import { StartGantry, useStartLightSequence } from "./RaceLights"
 import { Panel } from "./Panel"
+import { SettingsCog } from "./SettingsCog"
+import { SettingsDialog, SettingRow, SettingSegmented } from "./SettingsDialog"
 import { StarField } from "./Stars"
 import { Mountains } from "./Mountains"
 import { NightSky } from "./NightSky"
@@ -16,13 +18,10 @@ import { cubicBezier } from "@/lib/cubicBezier"
 import { labelForCurve } from "@/lib/presets"
 import { LANE_PALETTE as PALETTE } from "@/lib/palette"
 import type { Lane as LaneType } from "@/lib/types"
+import { type Settings, writeSettingsCookie } from "@/lib/settings"
 
 const DURATION_MS = 3000
 const MAX_LANES = 6 // capped so the side-view stays scenic (no endless stacking)
-
-// Curve graph still parked while the night scenery lands. Flip to re-enable. (Race lights now live
-// as the start-line gantry below.)
-const SHOW_GRAPH = true
 
 const INITIAL_LANES: LaneType[] = [
   {
@@ -44,13 +43,22 @@ type PlayState = {
   solvers: Array<(t: number) => number>
 }
 
-export function BezierPlayground() {
+export function BezierPlayground({ initialSettings }: { initialSettings: Settings }) {
   const [lanes, setLanes] = useState<LaneType[]>(INITIAL_LANES)
   const [progress, setProgress] = useState<number[]>(() =>
     INITIAL_LANES.map(() => 0),
   )
   const [currentT, setCurrentT] = useState(0)
   const [play, setPlay] = useState<PlayState | null>(null)
+  // user prefs (seeded from the cookie read server-side; persisted on change below)
+  const [showGraph, setShowGraph] = useState(initialSettings.showGraph)
+  const [showLights, setShowLights] = useState(initialSettings.showLights)
+  const [lightsStyle, setLightsStyle] = useState(initialSettings.lightsStyle)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+
+  useEffect(() => {
+    writeSettingsCookie({ showGraph, showLights, lightsStyle })
+  }, [showGraph, showLights, lightsStyle])
 
   const isPlaying = play !== null
 
@@ -93,7 +101,14 @@ export function BezierPlayground() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // ESC opens settings when closed; radix handles close-on-ESC while it's open (guarded here so
+      // the two don't fight — when open this branch is a no-op).
+      if (e.code === "Escape") {
+        if (!settingsOpen) setSettingsOpen(true)
+        return
+      }
       if (e.code !== "Space") return
+      if (settingsOpen) return // modal open — don't start a race behind it
       const target = e.target as HTMLElement | null
       if (
         target &&
@@ -104,18 +119,24 @@ export function BezierPlayground() {
         return
       if (e.repeat) return // ignore held-key auto-repeat
       e.preventDefault()
-      // Space starts the light countdown (not the race); green launches the cars via onGo.
-      // start() is a no-op until a run fully resets; only park the cars at the line when a fresh
-      // countdown actually begins, so they're at the start throughout the countdown.
-      if (lights.start()) {
-        setPlay(null)
-        setProgress(lanes.map(() => 0))
-        setCurrentT(0)
+      if (lightsStyle === "sequence") {
+        // Space starts the light countdown (not the race); green launches the cars via onGo.
+        // start() is a no-op until a run fully resets; only park the cars at the line when a fresh
+        // countdown actually begins, so they're at the start throughout the countdown.
+        if (lights.start()) {
+          setPlay(null)
+          setProgress(lanes.map(() => 0))
+          setCurrentT(0)
+        }
+      } else {
+        // simple — all greens light and the cars launch the same instant (no countdown). onGo
+        // (= onPlay) parks + resets progress; startSimple's active ref guards re-entry while racing.
+        lights.startSimple()
       }
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [lanes, lights.start])
+  }, [lanes, lights.start, lights.startSimple, lightsStyle, settingsOpen])
 
   const updateLane = (next: LaneType) => {
     setLanes((prev) => prev.map((l) => (l.id === next.id ? next : l)))
@@ -173,7 +194,7 @@ export function BezierPlayground() {
         />
         {/* curve graph — enclosed in the same billboard Panel as the start lights; parked on the
             right with its base resting on the horizon (mountain/ground line) */}
-        {SHOW_GRAPH && (
+        {showGraph && (
           <div className="absolute z-10" style={{ right: 40, bottom: -6 }}>
             <Panel>
               <CurveGraph
@@ -204,10 +225,9 @@ export function BezierPlayground() {
             transform: "translate(-50%, -100%)",
           }}
         >
-          <StartGantry
-            redColumns={lights.redColumns}
-            greenOn={lights.greenOn}
-          />
+          {/* gantry reflects the sequence: sequence lights reds→green over the countdown; simple
+              lights all greens at once on launch. Hidden entirely when showLights is off. */}
+          {showLights && <StartGantry redColumns={lights.redColumns} greenOn={lights.greenOn} />}
         </div>
         {lanes.map((lane, i) => (
           <Lane
@@ -248,7 +268,7 @@ export function BezierPlayground() {
         <div className="relative z-10 flex flex-col gap-4 px-8 pt-5">
           <PixelButton
             onClick={onAddLane}
-            disabled={lanes.length >= MAX_LANES}
+            disabled={lanes.length >= MAX_LANES || isPlaying || lights.running}
             glow
             className="self-start"
           >
@@ -267,6 +287,48 @@ export function BezierPlayground() {
       </div>
 
       {!isPlaying && !lights.running && <PressSpace />}
+
+      {/* settings — cog fixed top-right (click) + ESC both open the modal */}
+      <div className="fixed top-4 right-4 z-50">
+        <SettingsCog onClick={() => setSettingsOpen(true)} />
+      </div>
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <SettingRow label="CURVE GRAPH">
+          <SettingSegmented
+            value={showGraph ? "show" : "hide"}
+            options={[
+              { value: "show", label: "SHOW" },
+              { value: "hide", label: "HIDE" },
+            ]}
+            onChange={(v) => setShowGraph(v === "show")}
+          />
+        </SettingRow>
+        <SettingRow label="START LIGHTS">
+          <SettingSegmented
+            value={showLights ? "show" : "hide"}
+            options={[
+              { value: "show", label: "SHOW" },
+              { value: "hide", label: "HIDE" },
+            ]}
+            onChange={(v) => {
+              const show = v === "show"
+              setShowLights(show)
+              if (!show) setLightsStyle("simple") // hidden lights ⇒ instant launch
+            }}
+          />
+        </SettingRow>
+        <SettingRow label="LIGHT STYLE">
+          <SettingSegmented
+            value={lightsStyle}
+            options={[
+              { value: "sequence", label: "SEQUENCE" },
+              { value: "simple", label: "SIMPLE" },
+            ]}
+            onChange={setLightsStyle}
+            disabled={!showLights}
+          />
+        </SettingRow>
+      </SettingsDialog>
     </div>
   )
 }

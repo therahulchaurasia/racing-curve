@@ -10,6 +10,16 @@ export const STAIRCASE_CLIP = `polygon(
   6px 100%, 6px calc(100% - 3px), 3px calc(100% - 3px), 3px calc(100% - 6px), 0 calc(100% - 6px)
 )`
 
+// STAIRCASE eroded inward by `b` px on every edge. Layer over STAIRCASE_CLIP (SAME box size) and the
+// uncovered `b`-px ring reads as a border that traces the steps — uniform thickness (every step edge
+// is axis-aligned, so erosion is a flat ±b per coord). Same trick as notchInnerClip, full staircase.
+export const staircaseInnerClip = (b: number) => `polygon(
+  ${b}px ${6 + b}px, ${3 + b}px ${6 + b}px, ${3 + b}px ${3 + b}px, ${6 + b}px ${3 + b}px, ${6 + b}px ${b}px,
+  calc(100% - ${6 + b}px) ${b}px, calc(100% - ${6 + b}px) ${3 + b}px, calc(100% - ${3 + b}px) ${3 + b}px, calc(100% - ${3 + b}px) ${6 + b}px, calc(100% - ${b}px) ${6 + b}px,
+  calc(100% - ${b}px) calc(100% - ${6 + b}px), calc(100% - ${3 + b}px) calc(100% - ${6 + b}px), calc(100% - ${3 + b}px) calc(100% - ${3 + b}px), calc(100% - ${6 + b}px) calc(100% - ${3 + b}px), calc(100% - ${6 + b}px) calc(100% - ${b}px),
+  ${6 + b}px calc(100% - ${b}px), ${6 + b}px calc(100% - ${3 + b}px), ${3 + b}px calc(100% - ${3 + b}px), ${3 + b}px calc(100% - ${6 + b}px), ${b}px calc(100% - ${6 + b}px)
+)`
+
 export const JIGSAW_CLIP = `polygon(
   4px 0, calc(100% - 4px) 0,
   calc(100% - 4px) 2px, calc(100% - 2px) 2px,

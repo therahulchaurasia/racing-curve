@@ -135,7 +135,20 @@ export function useStartLightSequence({ stepMs = 1000, goDelayMs, onGo }: Sequen
     return true
   }
 
+  // "simple" launch — no countdown: all greens on + race starts the same instant. Re-entry guarded
+  // by the same `active` ref; reset() (race end) clears the greens.
+  const startSimple = (): boolean => {
+    if (active.current) return false
+    active.current = true
+    clear()
+    setRedColumns(0)
+    setGreenOn(true)
+    setRunning(false)
+    onGo?.()
+    return true
+  }
+
   useEffect(() => clear, [])
 
-  return { redColumns, greenOn, running, start, reset }
+  return { redColumns, greenOn, running, start, startSimple, reset }
 }

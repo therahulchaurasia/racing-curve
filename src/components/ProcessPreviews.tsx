@@ -10,6 +10,9 @@ import { BezierCurveEditor } from "./BezierCurveEditor"
 import { StartLight } from "./StartLight"
 import { RaceLights, StartGantry, useStartLightSequence } from "./RaceLights"
 import { RacingCurvesLogo } from "./RacingCurvesLogo"
+import { SettingsCog } from "./SettingsCog"
+import { SettingsDialog, SettingRow, SettingSegmented } from "./SettingsDialog"
+import type { LightsStyle } from "@/lib/settings"
 import { Mountains, FRONT_RIDGE, BACK_RIDGE } from "./Mountains"
 import { NightSky } from "./NightSky"
 import { Star, StarField, STAR_COLORS, type StarShape } from "./Stars"
@@ -82,6 +85,13 @@ const CURB_BG =
 const DASH_BG =
   "repeating-linear-gradient(90deg, #e5e5e5 0 28px, transparent 28px 56px)"
 
+// red "exit/destructive" candidates (DELETE + CLOSE) — compared in the Buttons section
+const RED_BTN = [
+  { name: "curb night", hi: "#c45a5a", face: "#9e3b3b", sh: "#6e2626", text: "#ffffff" },
+  { name: "curb day", hi: "#ec6a6a", face: "#dd4444", sh: "#a02e2e", text: "#ffffff" },
+  { name: "crimson", hi: "#e05c4d", face: "#c0392b", sh: "#7e2218", text: "#ffffff" },
+]
+
 // night-theme primary-button candidates (vibrant, with glow) — compared in the Buttons section
 const NIGHT_BTN = [
   { name: "cyan", hi: "#5fe0f5", face: "#22b8d6", sh: "#137a92", text: "#06303a", glow: "#22d3ee" },
@@ -100,6 +110,10 @@ export function ProcessPreviews() {
   const [roadN, setRoadN] = useState(6)
   const [roadPlaying, setRoadPlaying] = useState(true)
   const [laydownN, setLaydownN] = useState(4)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [demoShowGraph, setDemoShowGraph] = useState(true)
+  const [demoShowLights, setDemoShowLights] = useState(true)
+  const [demoLightsStyle, setDemoLightsStyle] = useState<LightsStyle>("sequence")
   const lights = useStartLightSequence()
   const roadItems = Array.from(
     { length: roadN },
@@ -111,6 +125,59 @@ export function ProcessPreviews() {
 
   return (
     <div className="flex flex-col gap-12 w-full max-w-[1100px]">
+      <Section title="Settings — cog + modal">
+        <div className="flex items-center gap-8 p-6" style={{ background: "#181445" }}>
+          <div className="flex flex-col items-center gap-2">
+            <SettingsCog onClick={() => setSettingsOpen(true)} />
+            <span className="text-[10px] text-[#7a6fb0] font-mono">click / ESC</span>
+          </div>
+          <PixelButton onClick={() => setSettingsOpen(true)}>OPEN SETTINGS</PixelButton>
+        </div>
+        <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+          <SettingRow label="CURVE GRAPH">
+            <SettingSegmented
+              value={demoShowGraph ? "show" : "hide"}
+              options={[
+                { value: "show", label: "SHOW" },
+                { value: "hide", label: "HIDE" },
+              ]}
+              onChange={(v) => setDemoShowGraph(v === "show")}
+            />
+          </SettingRow>
+          <SettingRow label="START LIGHTS">
+            <SettingSegmented
+              value={demoShowLights ? "show" : "hide"}
+              options={[
+                { value: "show", label: "SHOW" },
+                { value: "hide", label: "HIDE" },
+              ]}
+              onChange={(v) => {
+                const show = v === "show"
+                setDemoShowLights(show)
+                if (!show) setDemoLightsStyle("simple")
+              }}
+            />
+          </SettingRow>
+          <SettingRow label="LIGHT STYLE">
+            <SettingSegmented
+              value={demoLightsStyle}
+              options={[
+                { value: "sequence", label: "SEQUENCE" },
+                { value: "simple", label: "SIMPLE" },
+              ]}
+              onChange={setDemoLightsStyle}
+              disabled={!demoShowLights}
+            />
+          </SettingRow>
+        </SettingsDialog>
+        <Note>
+          Settings cog (two crossed pluses + masked centre hole) and the radix Dialog modal (focus
+          trap, ESC/backdrop close, ARIA — we only skin it: Panel bg, staircase corners, Silkscreen).
+          Rows use the shared <code>SettingRow</code>. Iterate the cog border + modal layout here, then
+          it&apos;s already live (same components drive the real app).
+        </Note>
+      </Section>
+
       <Section title="Night backdrop — two mountain ridges">
         <MountainLab />
         <Note>
@@ -423,6 +490,25 @@ export function ProcessPreviews() {
             <span className="text-xs text-[#666]">
               gray (used as vertical lane delete in app)
             </span>
+          </div>
+          {/* red exit/destructive candidates — DELETE + CLOSE on a dark swatch */}
+          <div className="flex flex-col gap-2">
+            <span className="text-xs text-[#888] font-mono">red candidates (DELETE / CLOSE)</span>
+            <div className="flex gap-8 items-end p-5" style={{ background: "#161232" }}>
+              {RED_BTN.map((b) => (
+                <div key={b.name} className="flex flex-col items-center gap-2">
+                  <div className="flex gap-2">
+                    <PixelButton face={b.face} hi={b.hi} sh={b.sh} textColor={b.text}>
+                      DELETE
+                    </PixelButton>
+                    <PixelButton face={b.face} hi={b.hi} sh={b.sh} textColor={b.text}>
+                      CLOSE
+                    </PixelButton>
+                  </div>
+                  <span className="text-[10px] text-[#7a6fb0] font-mono">{b.name}</span>
+                </div>
+              ))}
+            </div>
           </div>
           {/* night-theme primary candidates on a dark swatch so the glow reads */}
           <div className="flex flex-col gap-2">
