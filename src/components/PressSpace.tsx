@@ -31,7 +31,7 @@ export function PressSpace({ onStart }: { onStart: () => void }) {
       }}
     >
       <span className="start-hint-fine">PRESS SPACE TO START</span>
-      <span className="start-hint-touch">TAP TO START</span>
+      <span className="start-hint-touch">TAP HERE TO START</span>
     </button>
   )
 }
