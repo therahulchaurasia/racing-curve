@@ -58,3 +58,61 @@ body {
     opacity: 0;
   }
 }
+
+/* Modal (about/settings) enter + exit — shadcn-style fade + zoom, driven by radix's data-state.
+   Radix wraps Overlay/Content in Presence, so a data-state="closed" animation keeps the node mounted
+   until it finishes → close fades out too (not just enter). */
+@keyframes modal-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes modal-overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes modal-content-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes modal-content-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+.modal-overlay[data-state="open"] {
+  animation: modal-overlay-in 200ms ease-out;
+}
+.modal-overlay[data-state="closed"] {
+  animation: modal-overlay-out 200ms ease-in;
+}
+.modal-content[data-state="open"] {
+  animation: modal-content-in 200ms ease-out;
+}
+.modal-content[data-state="closed"] {
+  animation: modal-content-out 200ms ease-in;
+}
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay,
+  .modal-content {
+    animation: none;
+  }
+}

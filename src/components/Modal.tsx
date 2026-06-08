@@ -38,6 +38,7 @@ export function Modal({
             uses background-attachment:fixed so it stays anchored to the viewport while scrolling. */}
         <Dialog.Overlay
           ref={overlayRef}
+          className="modal-overlay"
           style={{
             position: "fixed",
             inset: 0,
@@ -55,7 +56,7 @@ export function Modal({
         >
           <Dialog.Content
             aria-describedby={undefined}
-            className="flex flex-col items-center"
+            className="flex flex-col items-center modal-content"
             style={{ position: "relative", zIndex: 61 }}
             onPointerDownOutside={(e) => {
               // the overlay is the scroll container, so its scrollbar lives "outside" the Content —
