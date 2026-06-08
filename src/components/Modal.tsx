@@ -32,10 +32,12 @@ export function Modal({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        {/* the Overlay IS the scroll container (radix's scrollable-dialog pattern): Content nests
+        {/* the Overlay is the scroll container (radix's scrollable-dialog pattern): Content nests
             inside it, so when the modal is taller than the viewport the OVERLAY scrolls — the bar sits
-            at the viewport edge (reads as the page scrollbar), no inner dialog scrollbar. The vignette
-            uses background-attachment:fixed so it stays anchored to the viewport while scrolling. */}
+            at the viewport edge (reads as the page scrollbar), no inner dialog scrollbar. The dark
+            vignette is a SEPARATE position:fixed layer below (NOT a background on this scrolling
+            element): background-attachment:fixed is broken on iOS — it desyncs during momentum scroll
+            and snaps to the wrong place on touch-release. */}
         <Dialog.Overlay
           ref={overlayRef}
           className="modal-overlay"
@@ -49,11 +51,21 @@ export function Modal({
             alignItems: "center",
             paddingTop: "7vh", // anchored near the top; grows downward, scrolls when it overflows
             paddingBottom: "7vh",
-            background: `radial-gradient(circle at center, rgba(255,255,255,0) 60%, rgba(255,255,255,0.1) 100%),
-              #050505`,
-            backgroundAttachment: "fixed",
           }}
         >
+          {/* viewport-anchored backdrop: dark fill + soft circular vignette. position:fixed so it
+              stays put while the overlay scrolls — the mobile-safe replacement for the old
+              background-attachment:fixed. pointer-events:none → scroll/clicks pass to the overlay. */}
+          <div
+            aria-hidden
+            style={{
+              position: "fixed",
+              inset: 0,
+              pointerEvents: "none",
+              background: `radial-gradient(circle at center, rgba(255,255,255,0) 60%, rgba(255,255,255,0.1) 100%),
+                #050505`,
+            }}
+          />
           <Dialog.Content
             aria-describedby={undefined}
             className="flex flex-col items-center modal-content"
