@@ -61,9 +61,9 @@ export function AboutDialog({
         </p>
         <p>
           Then I started Josh Comeau&apos;s{" "}
-          <AltLink href={LINKS.course.url}>{LINKS.course.label}</AltLink> and hit the
-          part about easing curves. I loved it. But I wanted to interpret them
-          in my own way. And I thought, what&apos;s better than racing cars?
+          <AltLink href={LINKS.course.url}>{LINKS.course.label}</AltLink> and
+          hit the part about easing curves. I loved it. But I wanted to
+          interpret them in my own way. And what&apos;s better than racing cars?
         </p>
         <p>So I built this.</p>
         <p>
@@ -81,7 +81,8 @@ export function AboutDialog({
           }}
         />
         <p style={{ marginTop: 4 }}>
-          built by <AltLink href={LINKS.twitter.url}>{LINKS.twitter.label}</AltLink>
+          built by{" "}
+          <AltLink href={LINKS.twitter.url}>{LINKS.twitter.label}</AltLink>
           {" · "}
           <AltLink href={LINKS.website.url}>{LINKS.website.label}</AltLink>
           {" · "}
@@ -102,7 +103,13 @@ export function AboutDialog({
 
 // styled link — violet underline, in one place so the markup/style isn't repeated per link. Internal
 // hrefs ("/...") use next/link; everything else opens in a new tab.
-function AltLink({ href, children }: { href: string; children: React.ReactNode }) {
+function AltLink({
+  href,
+  children,
+}: {
+  href: string
+  children: React.ReactNode
+}) {
   const style = {
     color: "var(--color-violet)",
     textDecoration: "underline",
