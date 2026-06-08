@@ -116,3 +116,17 @@ body {
     animation: none;
   }
 }
+
+/* Start-prompt copy swap: "PRESS SPACE TO START" on mouse, "TAP TO START" on touch — pure CSS off
+   the pointer type, so no JS / UA sniffing (see PressSpace). */
+.start-hint-touch {
+  display: none;
+}
+@media (pointer: coarse) {
+  .start-hint-fine {
+    display: none;
+  }
+  .start-hint-touch {
+    display: inline;
+  }
+}

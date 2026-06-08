@@ -94,13 +94,32 @@ export function BezierPlayground({
   // start lights drive the countdown; green (onGo) launches the cars
   const lights = useStartLightSequence({ onGo: onPlay })
 
+  // single source for "start the race" — shared by the Space key AND the tap target (PressSpace), so
+  // touch devices with no spacebar can start. Respects lightsStyle; no-ops while a modal is open or a
+  // run is already going (lights.start()/startSimple() guard re-entry).
+  const beginRace = () => {
+    if (settingsOpen || aboutOpen) return // a modal is open — don't start a race behind it
+    if (lightsStyle === "sequence") {
+      // Space/tap starts the light countdown (not the race); green launches the cars via onGo.
+      // start() is a no-op until a run fully resets; only park the cars when a fresh countdown begins.
+      if (lights.start()) {
+        setPlay(null)
+        setProgress(lanes.map(() => 0))
+        setCurrentT(0)
+      }
+    } else {
+      // simple — all greens light and the cars launch the same instant (no countdown).
+      lights.startSimple()
+    }
+  }
+
   // latest values the effects/handlers need, read through a ref so they don't have to re-subscribe
   // or re-run per render (the rAF loop must depend on `play` ONLY — adding `lights` would cancel +
   // restart it every render). Updated after commit (not during render) so concurrent/StrictMode
   // re-renders can't leave it stale.
-  const latest = useRef({ lanes, lightsStyle, settingsOpen, aboutOpen, lights })
+  const latest = useRef({ lights, beginRace })
   useEffect(() => {
-    latest.current = { lanes, lightsStyle, settingsOpen, aboutOpen, lights }
+    latest.current = { lights, beginRace }
   })
 
   useEffect(() => {
@@ -124,8 +143,6 @@ export function BezierPlayground({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.code !== "Space") return
-      const { lanes, lightsStyle, settingsOpen, aboutOpen, lights } = latest.current
-      if (settingsOpen || aboutOpen) return // a modal is open — don't start a race behind it
       const target = e.target as HTMLElement | null
       if (
         target &&
@@ -136,20 +153,7 @@ export function BezierPlayground({
         return
       if (e.repeat) return // ignore held-key auto-repeat
       e.preventDefault()
-      if (lightsStyle === "sequence") {
-        // Space starts the light countdown (not the race); green launches the cars via onGo.
-        // start() is a no-op until a run fully resets; only park the cars at the line when a fresh
-        // countdown actually begins, so they're at the start throughout the countdown.
-        if (lights.start()) {
-          setPlay(null)
-          setProgress(lanes.map(() => 0))
-          setCurrentT(0)
-        }
-      } else {
-        // simple — all greens light and the cars launch the same instant (no countdown). onGo
-        // (= onPlay) parks + resets progress; startSimple's active ref guards re-entry while racing.
-        lights.startSimple()
-      }
+      latest.current.beginRace() // shared with the tap target; handles modal guard + lightsStyle
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
@@ -299,7 +303,7 @@ export function BezierPlayground({
         </div>
       </div>
 
-      {!isPlaying && !lights.running && <PressSpace />}
+      {!isPlaying && !lights.running && <PressSpace onStart={beginRace} />}
 
       {/* top-right controls: "?" about + settings cog. Click to open; ESC closes whichever is open. */}
       <div className="fixed top-4 right-4 z-50 flex gap-2">
