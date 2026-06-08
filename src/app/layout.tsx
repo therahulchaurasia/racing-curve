@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Analytics } from "@vercel/analytics/next"
 import { Geist_Mono, VT323, Silkscreen } from "next/font/google"
 import { PixelGround } from "@/components/PixelGround"
+import { MobileGate } from "@/components/MobileGate"
 import { SITE } from "@/lib/site"
 import "./globals.css"
 
@@ -46,6 +47,8 @@ export default function RootLayout({
         {/* PixelGround = night-dirt world ground; wraps every route so each page doesn't repeat it.
             The 404 (BSOD) is a fixed opaque overlay, so it simply covers this — unaffected. */}
         <PixelGround>{children}</PixelGround>
+        {/* hard-covers small screens (md:hidden) — the race layout breaks below tablet width */}
+        <MobileGate />
         <Analytics />
       </body>
     </html>
