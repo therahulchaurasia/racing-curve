@@ -88,6 +88,13 @@ export function AboutDialog({
           {" · "}
           <AltLink href={LINKS.github.url}>{LINKS.github.label}</AltLink>
         </p>
+        {/* sprite attribution — CC0 but credited anyway: cars from Kenney, plants from Shaade */}
+        <p>
+          cars by <AltLink href={LINKS.kenney.url}>{LINKS.kenney.label}</AltLink>
+          {" · "}
+          plants by{" "}
+          <AltLink href={LINKS.shaade.url}>{LINKS.shaade.label}</AltLink>
+        </p>
         <p>
           you can check out the <AltLink href="/process">process</AltLink> here.
         </p>

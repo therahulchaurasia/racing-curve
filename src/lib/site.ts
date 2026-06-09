@@ -13,6 +13,9 @@ export const LINKS = {
     label: "whimsical animation",
     url: "https://whimsy.joshwcomeau.com/",
   },
+  // CC0 sprite artists — cars from Kenney, bushes/plants from Shaade (credited in the About modal)
+  kenney: { label: "kenney", url: "https://kenney.nl" },
+  shaade: { label: "shaade", url: "https://shaade.itch.io/" },
 } as const
 
 export const SITE = {
