@@ -152,6 +152,10 @@ export function BezierCurveEditor({ value, onChange }: Props) {
         </svg>
       </div>
 
+     
+      <TickLabel corner="bottom-right">time</TickLabel>
+      <TickLabel corner="top-left">progress</TickLabel>
+
       {innerSize > 0 && (
         <>
           <Knob
@@ -168,6 +172,33 @@ export function BezierCurveEditor({ value, onChange }: Props) {
           />
         </>
       )}
+    </div>
+  )
+}
+
+// corner axis label — muted Silkscreen on the board, positioned by corner via edge offsets (the
+// editor is a fluid square, so no pixel math like CurveGraph's W/H-bound version)
+function TickLabel({
+  corner,
+  children,
+}: {
+  corner: "top-left" | "top-right" | "bottom-left" | "bottom-right"
+  children: React.ReactNode
+}) {
+  const [v, h] = corner.split("-") as ["top" | "bottom", "left" | "right"]
+  return (
+    <div
+      className="absolute pointer-events-none select-none"
+      style={{
+        [v]: 6,
+        [h]: 6,
+        fontFamily: "var(--font-silkscreen)",
+        fontSize: 11,
+        color: "var(--color-curb-white)",
+        letterSpacing: "0.08em",
+      }}
+    >
+      {children}
     </div>
   )
 }
