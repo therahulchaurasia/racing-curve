@@ -11,7 +11,6 @@ import { PixelButton } from "./PixelButton"
 import { STAIRCASE_CLIP } from "../lib/clipPaths"
 import { labelForCurve } from "@/lib/presets"
 import { BUTTON_RED } from "@/lib/palette"
-import { pickCarSprite } from "@/lib/cars"
 import { fmt } from "@/lib/format"
 
 type Props = {
@@ -157,7 +156,7 @@ export function Lane({
   const applyCurve = (cp: ControlPoints) =>
     onChange({ ...lane, controlPoints: cp, label: labelForCurve(cp) })
 
-  const carSprite = pickCarSprite(lane.id)
+  const carSprite = lane.carSprite
   const chassisWidth = onRemove
     ? `calc(100% - ${DELETE_BTN_WIDTH}px - 2px)`
     : "100%"

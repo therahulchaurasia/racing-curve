@@ -5,4 +5,5 @@ export type Lane = {
   controlPoints: ControlPoints
   label: string
   color: string
+  carSprite: string
 }

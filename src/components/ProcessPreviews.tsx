@@ -26,24 +26,28 @@ import { CLUMPS, scatterFoliage } from "@/lib/foliage"
 import type { Lane as LaneType } from "@/lib/types"
 import type { ControlPoints } from "./BezierCurveEditor"
 
+// graph-only preview lanes — CurveGraph plots the curve + dot and never reads carSprite, so it's "".
 const GRAPH_LANES: LaneType[] = [
   {
     id: "g1",
     controlPoints: [0, 0, 0.58, 1],
     label: "ease-out",
     color: "#22d3ee",
+    carSprite: "",
   },
   {
     id: "g2",
     controlPoints: [0.42, 0, 1, 1],
     label: "ease-in",
     color: "#f472b6",
+    carSprite: "",
   },
   {
     id: "g3",
     controlPoints: [0.42, 0, 0.58, 1],
     label: "ease-in-out",
     color: "#a3e635",
+    carSprite: "",
   },
 ]
 

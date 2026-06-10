@@ -17,6 +17,7 @@ import { NightSky } from "./NightSky"
 import { FoliageLayer } from "./FoliageLayer"
 import { BUSHES } from "@/lib/foliage"
 import { cubicBezier } from "@/lib/cubicBezier"
+import { pickRandomCarSprite } from "@/lib/cars"
 import { labelForCurve } from "@/lib/presets"
 import { LANE_PALETTE as PALETTE } from "@/lib/palette"
 import type { Lane as LaneType } from "@/lib/types"
@@ -29,18 +30,22 @@ import {
 const DURATION_MS = 3000
 const MAX_LANES = 6 // capped so the side-view stays scenic (no endless stacking)
 
-const INITIAL_LANES: LaneType[] = [
+// the two starting lanes; carSprite is injected by the server (page.tsx) so the random pair is in the
+// first paint with no client-side swap. Built per mount from the server-passed sprites.
+const makeInitialLanes = (carSprites: string[]): LaneType[] => [
   {
     id: "a",
     controlPoints: [0, 0, 0.58, 1],
     label: "ease-out",
     color: PALETTE[0],
+    carSprite: carSprites[0],
   },
   {
     id: "b",
     controlPoints: [0.42, 0, 1, 1],
     label: "ease-in",
     color: PALETTE[1],
+    carSprite: carSprites[1],
   },
 ]
 
@@ -52,13 +57,17 @@ type PlayState = {
 export function BezierPlayground({
   initialSettings,
   introSeen,
+  initialCarSprites,
 }: {
   initialSettings: Settings
   introSeen: boolean
+  initialCarSprites: string[]
 }) {
-  const [lanes, setLanes] = useState<LaneType[]>(INITIAL_LANES)
+  const [lanes, setLanes] = useState<LaneType[]>(() =>
+    makeInitialLanes(initialCarSprites),
+  )
   const [progress, setProgress] = useState<number[]>(() =>
-    INITIAL_LANES.map(() => 0),
+    initialCarSprites.map(() => 0),
   )
   const [currentT, setCurrentT] = useState(0)
   const [play, setPlay] = useState<PlayState | null>(null)
@@ -182,6 +191,7 @@ export function BezierPlayground({
       controlPoints,
       label: labelForCurve(controlPoints),
       color,
+      carSprite: pickRandomCarSprite(),
     }
     setLanes((prev) => [...prev, next])
     setProgress((prev) => [...prev, 0])

@@ -1,5 +1,6 @@
-// Car sprites (Kenney.nl CC0 pixel cars) + a deterministic per-lane picker: the same lane id always
-// maps to the same car, stable across renders. Single source — import from here.
+// Car sprites (Kenney.nl CC0 pixel cars) + a random picker. The chosen sprite is stored on the lane
+// (see Lane type), so it stays stable across the lane's per-frame race renders while still varying
+// from one page load to the next. Single source — import from here.
 
 export const CAR_SPRITES = [
   "/assets/cars/buggy.png",
@@ -12,8 +13,6 @@ export const CAR_SPRITES = [
   "/assets/cars/vintage.png",
 ]
 
-export function pickCarSprite(id: string): string {
-  let h = 0
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0
-  return CAR_SPRITES[Math.abs(h) % CAR_SPRITES.length]
+export function pickRandomCarSprite(): string {
+  return CAR_SPRITES[Math.floor(Math.random() * CAR_SPRITES.length)]
 }
